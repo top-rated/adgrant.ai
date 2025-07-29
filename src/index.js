@@ -7,9 +7,6 @@ import rateLimit from "express-rate-limit";
 import path from "path";
 import bodyParser from "body-parser";
 import { UnipileClient } from "unipile-node-sdk";
-import swaggerJsdoc from "swagger-jsdoc";
-import swaggerUi from "swagger-ui-express";
-import redocExpress from "redoc-express";
 
 import { linkedInAgnet } from "./agnet/adGrantAgnet.js";
 import {
@@ -70,7 +67,6 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" })); // Add support f
 app.use(morgan("dev")); // Logging
 app.use(bodyParser.json());
 
-
 app.use(express.json());
 // Rate limiting
 const apiLimiter = rateLimit({
@@ -85,175 +81,14 @@ app.use("/api", apiLimiter);
 
 // API routes
 // const API_PREFIX = process.env.API_V1_PREFIX;
-const API_PREFIX = "/api/v1";
+const API_PREFIX = process.env.API_V1_PREFIX;
 
 // Root route
 app.get("/", (req, res) => {
   res.json({
     message: "Welcome to the Google Ad Grant Generator API",
-  })
+  });
 });
-
-
-
-// Swagger configuration
-const options = {
-  definition: {
-    openapi: "3.0.0",
-    info: {
-      title: "Google Ad Grant Generator API",
-      version: "1.0.0",
-      description:
-        "API for generating Google Ad Grant campaigns from website URLs",
-    },
-    servers: [
-      {
-        url: "http://localhost:3000",
-        description: "Development server",
-      },
-    ],
-  },
-  apis: ["./src/index.js"], // Path to the main file containing endpoints
-};
-const specs = swaggerJsdoc(options);
-
-// API documentation routes
-app.use(`${API_PREFIX}/api-docs`, swaggerUi.serve, swaggerUi.setup(specs));
-
-app.get(
-  `${API_PREFIX}/redoc`,
-  redocExpress({
-    title: "Google Ad Grant Generator API",
-    specUrl: `${API_PREFIX}/api-docs.json`,
-    customCss: fs.readFileSync("./src/redoc-custom.css", "utf8"),
-    theme: {
-      colors: {
-        primary: {
-          main: "#2563eb",
-          light: "#3b82f6",
-          dark: "#1d4ed8",
-        },
-        success: {
-          main: "#10b981",
-          light: "#34d399",
-          dark: "#059669",
-        },
-        warning: {
-          main: "#f59e0b",
-          light: "#fbbf24",
-          dark: "#d97706",
-        },
-        error: {
-          main: "#ef4444",
-          light: "#f87171",
-          dark: "#dc2626",
-        },
-        text: {
-          primary: "#1f2937",
-          secondary: "#6b7280",
-        },
-        border: {
-          dark: "#e5e7eb",
-          light: "#f3f4f6",
-        },
-      },
-      typography: {
-        fontSize: "14px",
-        lineHeight: "1.5",
-        code: {
-          fontSize: "13px",
-          fontFamily:
-            'Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-        },
-        headings: {
-          fontFamily:
-            '"Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", sans-serif',
-          fontWeight: "600",
-        },
-      },
-      sidebar: {
-        backgroundColor: "#f8fafc",
-        textColor: "#374151",
-        activeTextColor: "#2563eb",
-      },
-      rightPanel: {
-        backgroundColor: "#1f2937",
-        textColor: "#f9fafb",
-      },
-    },
-    options: {
-      theme: "light",
-      scrollYOffset: 60,
-      hideDownloadButton: false,
-      disableSearch: false,
-      hideHostname: false,
-      expandResponses: "200,201",
-      requiredPropsFirst: true,
-      sortPropsAlphabetically: true,
-      showExtensions: true,
-      noAutoAuth: false,
-      pathInMiddlePanel: true,
-      jsonSampleExpandLevel: 2,
-      menuToggle: true,
-      untrustedSpec: false,
-      hideLoading: false,
-      suppressWarnings: false,
-    },
-    redocOptions: {
-      nativeScrollbars: false,
-      theme: {
-        colors: {
-          primary: {
-            main: "#2563eb",
-          },
-        },
-        typography: {
-          fontSize: "14px",
-          fontFamily:
-            '"Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", sans-serif',
-        },
-      },
-    },
-  })
-);
-
-// Serve OpenAPI spec as JSON for Redoc
-app.get(`${API_PREFIX}/api-docs.json`, (req, res) => {
-  res.setHeader("Content-Type", "application/json");
-  res.send(specs);
-});
-
-/**
- * @swagger
- * /api/system-prompt:
- *   get:
- *     summary: Get the current system prompt
- *     description: Retrieves the current system prompt used by the chatbot
- *     tags:
- *       - System Prompt
- *     responses:
- *       200:
- *         description: System prompt retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 system_prompt:
- *                   type: string
- *                   description: The current system prompt text
- *                   example: "You are a helpful AI assistant..."
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Failed to fetch system prompt"
- */
 
 // API route to get system prompt
 app.get(`${API_PREFIX}/system-prompt`, async (req, res) => {
@@ -266,59 +101,6 @@ app.get(`${API_PREFIX}/system-prompt`, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/v1/system-prompt:
- *   post:
- *     summary: Update the system prompt
- *     description: Updates the system prompt used by the chatbot
- *     tags:
- *       - System Prompt
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - system_prompt
- *             properties:
- *               system_prompt:
- *                 type: string
- *                 description: The new system prompt text
- *                 example: "You are a helpful AI assistant specialized in LinkedIn messaging..."
- *     responses:
- *       200:
- *         description: System prompt updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *       400:
- *         description: Bad request - missing system_prompt
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Missing system_prompt in request body"
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Failed to update system prompt"
- */
 // API route to update system prompt
 app.post(`${API_PREFIX}/system-prompt`, async (req, res) => {
   try {
@@ -373,112 +155,6 @@ async function sendReply(accountId, chatId, message, originalMessageId) {
   }
 }
 
-/**
- * @swagger
- * /api/webhook:
- *   post:
- *     summary: LinkedIn webhook endpoint
- *     description: Receives webhook notifications from Unipile for LinkedIn messages and processes them with intelligent responses
- *     tags:
- *       - Webhook
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               message_id:
- *                 type: string
- *                 description: Unique identifier for the message
- *                 example: "msg_123456789"
- *               chat_id:
- *                 type: string
- *                 description: Unique identifier for the chat/conversation
- *                 example: "chat_987654321"
- *               account_id:
- *                 type: string
- *                 description: Account identifier from Unipile
- *                 example: "acc_123"
- *               sender:
- *                 type: object
- *                 description: Information about the message sender
- *                 properties:
- *                   name:
- *                     type: string
- *                     example: "John Doe"
- *                   attendee_name:
- *                     type: string
- *                     example: "John Doe"
- *                   attendee_provider_id:
- *                     type: string
- *                     example: "12345678"
- *               message:
- *                 type: string
- *                 description: The actual message content
- *                 example: "Hello, I'm interested in your services"
- *               timestamp:
- *                 type: string
- *                 description: When the message was sent
- *                 example: "2024-01-15T10:30:00Z"
- *             required:
- *               - message_id
- *               - chat_id
- *               - message
- *     responses:
- *       200:
- *         description: Webhook processed successfully
- *         content:
- *           application/json:
- *             schema:
- *               oneOf:
- *                 - type: object
- *                   properties:
- *                     status:
- *                       type: string
- *                       enum: ["success", "ignored", "fallback_success", "webhook_received"]
- *                     message:
- *                       type: string
- *                     messageId:
- *                       type: string
- *                     chatId:
- *                       type: string
- *                     threadId:
- *                       type: string
- *                     reply:
- *                       type: string
- *                       description: Truncated response for logging
- *                 - type: object
- *                   properties:
- *                     status:
- *                       type: string
- *                       enum: ["ignored"]
- *                     reason:
- *                       type: string
- *                       enum: ["missing_required_data", "already_processed", "own_message", "auto_reply_detected"]
- *                     received:
- *                       type: object
- *                       properties:
- *                         messageId:
- *                           type: string
- *                         chatId:
- *                           type: string
- *                         messageText:
- *                           type: string
- *       500:
- *         description: Internal server error (though returns 200 for webhook compatibility)
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "error"
- *                 message:
- *                   type: string
- *                   example: "Internal processing error"
- */
 // Main webhook endpoint
 app.post(`${API_PREFIX}/webhook`, async (req, res) => {
   try {
@@ -550,10 +226,7 @@ app.post(`${API_PREFIX}/webhook`, async (req, res) => {
       console.log(`🤖 Processing LinkedIn query with threadId: ${chatId}`);
 
       // Use linkedInAgnet to generate intelligent response
-      const intelligentResponse = await linkedInAgnet(
-        chatId,
-        messageText
-      );
+      const intelligentResponse = await linkedInAgnet(chatId, messageText);
 
       console.log(
         `🧠 Generated response: ${intelligentResponse?.substring(0, 100)}...`

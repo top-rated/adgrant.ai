@@ -1,6 +1,6 @@
 # Google Ad Grant Campaign Generator
 
-**Enterprise-level automation system that helps nonprofits create Google Ads campaigns through LinkedIn messaging.**
+**DEVELOPMENT IN PROGRESS...**
 
 ## 🎯 Current Implementation Status
 
@@ -98,13 +98,6 @@ Keyword Research → Content Analysis → Response Generation → LinkedIn Reply
 - `POST /api/v1/webhook` - LinkedIn message processing
 - `GET /api/v1/system-prompt` - Get current system prompt
 - `POST /api/v1/system-prompt` - Update system prompt
-- `GET /api/v1/api-docs` - Swagger documentation
-- `GET /api/v1/redoc` - ReDoc documentation
-
-### **Documentation Access**
-
-- **Swagger UI**: `http://localhost:3000/api/v1/api-docs`
-- **ReDoc**: `http://localhost:3000/api/v1/redoc`
 
 ## 🔧 **Setup & Configuration**
 
