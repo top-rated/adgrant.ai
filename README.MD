@@ -1,152 +1,221 @@
-## Ads Grant Campaign System
+# Google Ad Grant Campaign Generator
 
-**CORE DEVELOPMENT COMPONENTS**
+**Enterprise-level automation system that helps nonprofits create Google Ads campaigns through LinkedIn messaging.**
 
-### **1. LinkedIn Message Processing**
+## 🎯 Current Implementation Status
 
-- **Unipile Integration**: Extend existing LinkedIn company page connection
-- **Message Parser**: Extract URLs and optional instructions from incoming messages
-- **Queue System**: Handle multiple concurrent requests
-- **Response Handler**: Send CSV files back through LinkedIn messages
+### ✅ **COMPLETED FEATURES**
 
-### **2. Website Scraping Engine**
+#### **1. Core Infrastructure (Production Ready)**
 
-- **Web Scraper**: https://jina.ai/
-- **Content Extractor**: Parse page content, meta tags, headings, keywords
-- **Site Mapper**: Crawl entire website structure if needed
-- **Content Analyzer**: Extract business context, services, target audience
+- **Express.js Server**: Complete REST API with 627 lines of production code
+- **Security Layer**: Helmet, CORS, rate limiting, and security headers
+- **API Documentation**: Swagger/OpenAPI with custom ReDoc styling
+- **Error Handling**: Comprehensive error management and logging
+- **Memory Management**: Thread-based conversation tracking
 
-### **3. AI-Powered Campaign Generator**
+#### **2. LinkedIn Integration (Fully Operational)**
 
-- **Azure AI/Google Gemini Integration**: Similar to current LangChain setup
-- **Campaign Strategist**: Analyze scraped content for campaign themes
-- **Keyword Generator**: Create 25 broad match, high-volume keywords per page
-- **Ad Copy Generator**: Generate 2 RSA ads per ad group with compelling copy
-- **Campaign Structuring**: Organize into proper Google Ads hierarchy
+- **Unipile SDK**: Complete integration for LinkedIn company page messaging (ID: 107697030)
+- **Webhook Processing**: Real-time message receiving and processing
+- **Message Parsing**: URL extraction and instruction processing
+- **Auto-Reply System**: Intelligent responses with fallback handling
+- **Duplicate Prevention**: Message ID tracking to avoid repeated processing
 
-### **4. CSV Generation System**
+#### **3. AI Agent System (Advanced)**
 
-- **Google Ads Format Compliance**: Match exact CSV structure requirements
-- **Campaign Template Engine**: Pre-built templates for different business types
-- **Budget Distribution**: Allocate $320 daily budget across campaigns
-- **Quality Validation**: Ensure all required fields and limits are met
+- **LangChain Integration**: React Agent pattern with tool calling
+- **Multi-Provider Support**: Azure OpenAI and Google Gemini
+- **Dynamic Model Switching**: Runtime configuration changes
+- **Memory Persistence**: Conversation context management
+- **System Prompt Management**: Dynamic prompt loading and caching
 
-### **5. File Management**
+#### **4. Research & Analysis Tools (4 Tools)**
 
-- **CSV Builder**: Generate proper Google Ads Editor compatible files
-- **File Storage**: Temporary storage for generated campaigns
-- **File Delivery**: Send via Unipile LinkedIn messaging
-- **Cleanup System**: Remove temporary files after delivery
+- **Website Scraper** (`read_url.js`): Jina.ai integration for content extraction
+- **Keyword Expander** (`keyword_expander.js`): Multi-type keyword generation and clustering
+- **DuckDuckGo Research** (`duckduckgo_research.js`): Topic research and instant answers
+- **DuckDuckGo Keywords** (`duckduckgo_keywords.js`): Related keywords and autocomplete
 
-## **TECHNICAL STACK ALIGNMENT**
+#### **5. Configuration System**
 
-### **Backend Framework**
+- **Provider Management**: JSON-based model configuration
+- **System Prompts**: File-based prompt management with API updates
+- **Environment Configuration**: Secure credential management
 
-- **Express.js**: Consistent with current architecture
-- **Routing**: New route group for ad grant functionality
+## 🚧 **PLANNED DEVELOPMENT PHASES**
 
-### **External Integrations**
+### **Phase 2: Campaign Generation Engine**
 
-- **Unipile SDK**: Already implemented in current system
-- **AI Services**: Azure AI API or Google Gemini (similar to current OpenAI setup)
-- **Web Scraping**: Puppeteer for dynamic content scraping
-- **CSV Processing**: Native Node.js CSV libraries
+- Google Ads CSV formatting and export
+- Campaign structure generation (2 ad groups per page)
+- RSA ad copy creation (2 ads per ad group)
+- Budget distribution algorithms ($320 daily budget)
+- CPA bidding strategy implementation
 
-### **Data Flow Architecture**
+### **Phase 3: File Management & Delivery**
 
-```javascript
-LinkedIn Message → Unipile API → Message Parser → URL Scraper →
-AI Campaign Generator → CSV Builder → File Delivery → LinkedIn Response
+- CSV file generation for Google Ads Editor
+- Temporary file storage and cleanup
+- LinkedIn file attachment system
+- Campaign validation and quality checks
+
+### **Phase 4: Advanced Features**
+
+- Direct Google Ads API integration
+- Manager account connection
+- Performance tracking and optimization
+- Bulk processing capabilities
+
+## 🛠 **Technical Architecture**
+
+### **Backend Stack**
+
+```
+Express.js → Unipile SDK → LangChain Agents → Research Tools → Response Generation
 ```
 
-## **DEVELOPMENT PHASES**
+### **AI Processing Flow**
 
-### **Phase 1: Core Infrastructure**
+```
+LinkedIn Message → URL Extraction → Website Scraping →
+Keyword Research → Content Analysis → Response Generation → LinkedIn Reply
+```
 
-- Set up message receiving from LinkedIn company page
-- Implement URL extraction and validation
-- Basic web scraping functionality
-- Response mechanism back to LinkedIn
+### **Current Tools & Capabilities**
 
-### **Phase 2: AI Integration**
+1. **Website Analysis**: Full-page content extraction via Jina.ai
+2. **Keyword Research**: Multi-source keyword generation (25+ keywords per analysis)
+3. **Content Intelligence**: DuckDuckGo-powered research and topic expansion
+4. **Conversation Management**: Thread-based memory for ongoing conversations
+5. **Provider Flexibility**: Switch between Azure OpenAI and Google Gemini
 
-- Integrate Azure AI or Google Gemini
-- Develop campaign generation prompts
-- Implement keyword research logic
-- Create ad copy generation system
+## 📋 **API Endpoints**
 
-### **Phase 3: CSV Generation**
+### **Core Endpoints**
 
-- Build Google Ads CSV formatter
-- Implement campaign structure logic
-- Add budget distribution algorithms
-- Quality assurance and validation
+- `GET /` - API welcome message
+- `POST /api/v1/webhook` - LinkedIn message processing
+- `GET /api/v1/system-prompt` - Get current system prompt
+- `POST /api/v1/system-prompt` - Update system prompt
+- `GET /api/v1/api-docs` - Swagger documentation
+- `GET /api/v1/redoc` - ReDoc documentation
 
-### **Phase 4: Testing & Optimization**
+### **Documentation Access**
 
-- End-to-end workflow testing
-- Performance optimization for large websites
-- Error handling and edge cases
-- Integration with existing platform if extending
+- **Swagger UI**: `http://localhost:3000/api/v1/api-docs`
+- **ReDoc**: `http://localhost:3000/api/v1/redoc`
 
-## **KEY TECHNICAL CONSIDERATIONS**
+## 🔧 **Setup & Configuration**
 
-### **Scalability**
+### **Environment Variables**
 
-- **Async Processing**: Handle multiple website scraping requests
-- **Queue Management**: Process requests in order with proper throttling
-- **Resource Management**: Limit concurrent scraping to prevent overload
-- **Caching**: Store website analysis to avoid re-scraping
+```env
+UNIPILE_BASE_URL=your_unipile_base_url
+UNIPILE_ACCESS_TOKEN=your_access_token
+ACCOUNT_ID=your_linkedin_account_id
+AZURE_OPENAI_API_KEY=your_azure_key
+AZURE_OPENAI_ENDPOINT=your_azure_endpoint
+GOOGLE_API_KEY=your_google_gemini_key
+PORT=3000
+```
 
-### **Error Handling**
+### **Installation**
 
-- **Scraping Failures**: Handle protected/blocked websites
-- **AI API Limits**: Manage API quotas and fallback options
-- **CSV Validation**: Ensure generated files meet Google Ads requirements
-- **LinkedIn Delivery**: Handle message sending failures
+```bash
+npm install
+npm start
+```
 
-### **Security & Compliance**
+### **Provider Configuration**
 
-- **Rate Limiting**: Respect website scraping limits
-- **Data Privacy**: Handle scraped content responsibly
-- **API Security**: Secure AI service integrations
-- **File Security**: Secure temporary file handling
+Edit `src/config/providers.json` to switch between AI models:
 
-### **Performance Optimization**
+```json
+{
+  "providers": [
+    {
+      "name": "azure",
+      "model": "gpt-4",
+      "active": true,
+      "maxTokens": 4000,
+      "temperature": 0.7
+    },
+    {
+      "name": "google",
+      "model": "gemini-pro",
+      "active": false,
+      "maxTokens": 4000,
+      "temperature": 0.7
+    }
+  ]
+}
+```
 
-- **Parallel Processing**: Scrape multiple pages simultaneously
-- **Smart Scraping**: Focus on relevant pages only
-- **AI Efficiency**: Batch AI requests where possible
-- **Memory Management**: Handle large websites efficiently
+## 🎯 **Current Workflow**
 
-## **INTEGRATION WITH EXISTING PLATFORM**
+1. **Message Reception**: LinkedIn webhook receives company page messages
+2. **URL Processing**: Extract website URLs from message content
+3. **Content Analysis**: Scrape website using Jina.ai integration
+4. **Research Phase**: Generate keywords and analyze content themes
+5. **Response Generation**: Create intelligent LinkedIn response
+6. **Reply Delivery**: Send response back through LinkedIn messaging
 
-### **Leverage Current Features**
+## 📊 **System Specifications**
 
-- **Authentication System**: If user accounts needed
-- **Subscription Model**: Premium feature integration
-- **Admin Dashboard**: Monitor ad generation requests
-- **Usage Tracking**: Track API usage and costs
+### **Performance Metrics**
 
-### **Data Storage Options**
+- **Processing Time**: 15-30 seconds per website analysis
+- **Memory Usage**: Thread-based conversation tracking
+- **Rate Limiting**: 100 requests per 15 minutes per IP
+- **Concurrent Processing**: Multiple LinkedIn conversations simultaneously
 
-- **JSON Files**: Consistent with current approach
-- **Database**: For more complex data relationships
-- **Cache Layer**: Speed up repeated requests
-- **File System**: Temporary CSV storage
+### **Security Features**
 
-## **FUTURE EXTENSIBILITY**
+- **Content Security Policy**: Comprehensive CSP headers
+- **Rate Limiting**: IP-based request throttling
+- **Input Validation**: Message content sanitization
+- **Error Handling**: Graceful degradation with fallback responses
 
-### **Google Ads API Integration**
+## 🔮 **Future Integration Points**
 
-- **OAuth Setup**: Connect user Google Ads accounts
-- **API Wrapper**: Direct campaign upload functionality
-- **Account Management**: Handle multiple client accounts
-- **Automation**: Scheduled campaign updates
+### **Google Ads API Integration** (Phase 4)
 
-### **Enhanced Features**
+- OAuth2 authentication for Google Ads accounts
+- Direct campaign upload to Google Ads
+- Manager account integration for agencies
+- Real-time campaign performance monitoring
 
-- **Campaign Performance**: Track and optimize campaigns
-- **A/B Testing**: Generate multiple campaign variations
-- **Industry Templates**: Pre-built templates for different sectors
-- **Bulk Processing**: Handle multiple URLs simultaneously
+### **Enhanced Automation** (Phase 5)
+
+- N8N workflow integration
+- Scheduled campaign optimization
+- Performance-based budget adjustments
+- Multi-language campaign support
+
+## 🏗 **Development Commands**
+
+```bash
+# Start development server
+npm run dev
+
+# Start production server
+npm start
+
+# Run tests
+npm test
+
+# View API documentation
+npm run docs
+```
+
+## 📝 **Current Limitations**
+
+- **CSV Generation**: Not yet implemented - campaigns are analyzed but not exported
+- **File Delivery**: LinkedIn file attachment system pending
+- **Budget Distribution**: Logic designed but not implemented
+- **Google Ads Format**: CSV structure planned but not built
+
+---
+
+**Status**: 🟡 **Beta** - Core functionality operational, campaign generation in development.
