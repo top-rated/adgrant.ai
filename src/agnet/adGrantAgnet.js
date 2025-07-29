@@ -8,17 +8,21 @@ import { readUrlContent } from "../tools/read_url.js";
 import { keywordExpander } from "../tools/keyword_expander.js";
 import { duckDuckGoKeywordResearch } from "../tools/duckduckgo_research.js";
 import { duckDuckGoKeywords } from "../tools/duckduckgo_keywords.js";
-import { getActiveModel } from '../config/models.js';
-
+import { convertToCSV } from "../tools/convert_to_csv.js";
+import { getActiveModel } from "../config/models.js";
 
 dotenv.config();
-
-
 
 const llm = getActiveModel();
 
 // Get all  tools
-const tools = [readUrlContent,keywordExpander,duckDuckGoKeywordResearch,duckDuckGoKeywords];
+const tools = [
+  readUrlContent,
+  keywordExpander,
+  duckDuckGoKeywordResearch,
+  duckDuckGoKeywords,
+  convertToCSV,
+];
 
 // We'll load the prompt dynamically during processing
 let cachedPrompt = null;

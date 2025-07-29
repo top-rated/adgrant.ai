@@ -1,12 +1,11 @@
-import { linkedInAgnet } from './src/agnet/adGrantAgnet.js'
+import { linkedInAgnet } from "./src/agnet/adGrantAgnet.js";
 
+const main = async () => {
+  const threadId = "123";
+  const query = "hello use any dummy data and give me a csv file so i can see your are working give m ereal wokring csv download link not any dumy link";
 
-const main=async(threadId,query)=>{
-  const result=await linkedInAgnet(threadId,query);
+  const result = await linkedInAgnet(threadId, query);
   console.log(result);
-}
+};
 
-const threadId='123';
-const query='hello how are you';
-
-main(threadId,query);
+main();
