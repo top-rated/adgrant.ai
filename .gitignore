@@ -11,6 +11,7 @@ system_prompt
 client_requirments.md
 example.csv
 /.trae/
+/project_details/
 env.example
 unipile_testing.js
 test-keys.md

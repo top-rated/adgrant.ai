@@ -5,10 +5,15 @@ import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import path from "path";
+import { fileURLToPath } from "url";
 import bodyParser from "body-parser";
 import { UnipileClient } from "unipile-node-sdk";
-
-import { linkedInAgnet } from "./agnet/adGrantAgnet.js";
+import { processQuery } from "./agnet/adGrantAgnet.js";
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { isAIMessageChunk } from "@langchain/core/messages";
+import { linkedInAgnet, generateWebCampaigns } from "./agnet/adGrantAgnet.js";
 import {
   getSystemPrompt,
   updateSystemPrompt,
@@ -76,6 +81,9 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+app.use(express.static(path.join(__dirname, "../public")));
+// Apply rate limiting to all API routes
+
 // Apply rate limiting to all API routes
 app.use("/api", apiLimiter);
 
@@ -85,9 +93,73 @@ const API_PREFIX = process.env.API_V1_PREFIX;
 
 // Root route
 app.get("/", (req, res) => {
-  res.json({
-    message: "Welcome to the Google Ad Grant Generator API",
+  res.sendFile(path.join(__dirname, "../public", "index.html"));
+});
+
+// Health check endpoint for Docker
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || "development",
+    version: process.env.npm_package_version || "1.0.0",
   });
+});
+
+//chat route
+app.post(`${API_PREFIX}/chat`, async (req, res) => {
+  const { threadId, query } = req.body;
+
+  // Set headers for Server-Sent Events
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Cache-Control",
+  });
+
+  try {
+    const stream = await processQuery(threadId, query);
+
+    for await (const [message, _metadata] of stream) {
+      if (isAIMessageChunk(message) && message.tool_call_chunks?.length) {
+        const toolCallData = {
+          type: "tool_call_chunk",
+          content: message.tool_call_chunks[0].args,
+        };
+        res.write(`data: ${JSON.stringify(toolCallData)}\n\n`);
+
+        console.log(
+          `${message.getType()} MESSAGE TOOL CALL CHUNK: ${
+            message.tool_call_chunks[0].args
+          }`
+        );
+      } else if (message.content) {
+        const messageData = {
+          type: "message",
+          content: message.content,
+          messageType: message.getType(),
+        };
+        res.write(`data: ${JSON.stringify(messageData)}\n\n`);
+
+        console.log(`${message.getType()} MESSAGE CONTENT: ${message.content}`);
+      }
+    }
+
+    // Send completion signal
+    res.write(`data: ${JSON.stringify({ type: "complete" })}\n\n`);
+    res.end();
+  } catch (error) {
+    console.error("Chat stream error:", error);
+    const errorData = {
+      type: "error",
+      message: "Failed to fetch response",
+    };
+    res.write(`data: ${JSON.stringify(errorData)}\n\n`);
+    res.end();
+  }
 });
 
 // API route to get system prompt
@@ -115,6 +187,49 @@ app.post(`${API_PREFIX}/system-prompt`, async (req, res) => {
   } catch (error) {
     console.error("Error updating system prompt:", error);
     res.status(500).json({ error: "Failed to update system prompt" });
+  }
+});
+
+// Web campaign generation endpoint
+app.post(`${API_PREFIX}/generate-campaigns`, async (req, res) => {
+  try {
+    const { threadId, websiteUrl, instructions } = req.body;
+
+    // Validate required fields
+    if (!threadId || !websiteUrl) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields: threadId and websiteUrl are required",
+      });
+    }
+
+    console.log(`🚀 Starting web campaign generation for: ${websiteUrl}`);
+
+    // Generate campaigns using the web-specific agent
+    const result = await generateWebCampaigns(
+      threadId,
+      websiteUrl,
+      instructions || ""
+    );
+
+    console.log(`✅ Campaign generation completed for ${websiteUrl}`);
+
+    // Return the structured response
+    res.json(result);
+  } catch (error) {
+    console.error("❌ Error in web campaign generation:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      response: {
+        status: "error",
+        step: "server_error",
+        progress: 0,
+        message: `Server error during campaign generation: ${error.message}`,
+        data: null,
+        recommendations: ["Please try again later or contact support"],
+      },
+    });
   }
 });
 
@@ -203,8 +318,9 @@ app.post(`${API_PREFIX}/webhook`, async (req, res) => {
     if (
       sender?.attendee_name &&
       (sender.attendee_name.toLowerCase().includes("top-voice.ai") ||
+        sender.attendee_name.toLowerCase().includes("Google Ad Grant AI") ||
         sender.attendee_name.toLowerCase().includes("lisa green") ||
-        sender.attendee_provider_id === "79109442")
+        sender.attendee_provider_id === "107697030")
     ) {
       console.log("⚠️  Message from our own account, skipping");
       return res.status(200).json({ status: "ignored", reason: "own_message" });

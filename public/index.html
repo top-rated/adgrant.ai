@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ad Grant AI - Professional Campaign Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'google': ['Google Sans', 'Inter', 'system-ui', 'sans-serif'],
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        google: {
+                            blue: '#4285f4',
+                            red: '#ea4335',
+                            yellow: '#fbbc04',
+                            green: '#34a853',
+                        },
+                        gray: {
+                            25: '#fcfcfd',
+                            50: '#f9fafb',
+                            100: '#f3f4f6',
+                            200: '#e5e7eb',
+                            300: '#d1d5db',
+                            400: '#9ca3af',
+                            500: '#6b7280',
+                            600: '#4b5563',
+                            700: '#374151',
+                            800: '#1f2937',
+                            900: '#111827',
+                            950: '#030712',
+                        }
+                    },
+                    boxShadow: {
+                        'google': '0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15)',
+                        'google-hover': '0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15)',
+                        'google-focus': '0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15)',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'scale-in': 'scaleIn 0.2s ease-out',
+                        'bounce-subtle': 'bounceSubtle 0.6s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        scaleIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        },
+                        bounceSubtle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-4px)' },
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gray-25 font-google antialiased">
+    <!-- Header with enhanced branding -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="flex items-center space-x-3">
+                        <!-- Logo -->
+                        <div class="w-8 h-8 bg-gradient-to-br from-google-blue to-google-green rounded-lg flex items-center justify-center">
+                            <span class="material-icons text-white text-lg">campaign</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-semibold text-gray-900">Ad Grant AI</h1>
+                            <p class="text-xs text-gray-500 -mt-0.5">Professional Campaign Generator</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- Status indicator -->
+                    <div class="flex items-center space-x-2 text-sm text-gray-600">
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span>System Online</span>
+                    </div>
+                    <!-- Help button -->
+                    <button class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200" title="Help & Documentation">
+                        <span class="material-icons text-20">help_outline</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Enhanced Hero Section -->
+        <div class="text-center mb-12 animate-fade-in">
+            <div class="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                <span class="material-icons text-base">auto_awesome</span>
+                <span>AI-Powered Campaign Generation</span>
+            </div>
+            <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                Transform Your Website Into
+                <span class="bg-gradient-to-r from-google-blue to-google-green bg-clip-text text-transparent">
+                    Professional Ad Campaigns
+                </span>
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Generate Google Ad Grant campaigns with AI-powered keyword research, compelling ad copy, 
+                and optimized campaign structures. Export directly to Google Ads Editor.
+            </p>
+        </div>
+
+        <!-- Campaign Generation Interface -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Form Column -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-2xl shadow-google border border-gray-200 overflow-hidden">
+                    <!-- Form Header -->
+                    <div class="bg-gradient-to-r from-gray-50 to-blue-50 px-8 py-6 border-b border-gray-200">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-google-blue rounded-xl flex items-center justify-center">
+                                <span class="material-icons text-white">web</span>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Website Analysis</h3>
+                                <p class="text-sm text-gray-600">Enter your website to begin campaign generation</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Content -->
+                    <div class="p-8">
+                        <form id="campaignForm" class="space-y-8">
+                            <!-- Enhanced URL Input -->
+                            <div class="space-y-3">
+                                <label for="websiteUrl" class="flex items-center text-sm font-semibold text-gray-700">
+                                    <span class="material-icons text-base mr-2 text-gray-500">link</span>
+                                    Website URL
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <span class="material-icons text-gray-400 text-20">language</span>
+                                    </div>
+                                    <input 
+                                        type="url" 
+                                        id="websiteUrl" 
+                                        name="websiteUrl"
+                                        placeholder="https://your-nonprofit-website.org"
+                                        class="w-full pl-12 pr-12 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-google-blue focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 bg-white shadow-sm"
+                                        required
+                                    >
+                                    <div class="absolute inset-y-0 right-0 pr-4 flex items-center">
+                                        <div id="urlValidationIcon" class="hidden">
+                                            <span class="material-icons text-green-500 text-20">check_circle</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-2 text-sm text-gray-600">
+                                    <span class="material-icons text-base text-blue-500 mt-0.5">info</span>
+                                    <p>We'll analyze your entire website to create targeted campaigns for each page</p>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Instructions Input -->
+                            <div class="space-y-3">
+                                <label for="instructions" class="flex items-center text-sm font-semibold text-gray-700">
+                                    <span class="material-icons text-base mr-2 text-gray-500">edit_note</span>
+                                    Campaign Instructions
+                                    <span class="text-gray-400 font-normal ml-2">(Optional)</span>
+                                </label>
+                                <textarea 
+                                    id="instructions" 
+                                    name="instructions"
+                                    rows="4"
+                                    placeholder="Specify target audiences, key services, geographic focus, or any special requirements for your campaigns..."
+                                    class="w-full px-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-google-blue focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 bg-white shadow-sm resize-none"
+                                ></textarea>
+                                <div class="flex items-center justify-between text-sm text-gray-500">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="material-icons text-base text-green-500">psychology</span>
+                                        <span>AI will optimize based on your instructions</span>
+                                    </div>
+                                    <span id="charCount" class="text-xs">0 / 500</span>
+                                </div>
+                            </div>
+
+                            <!-- Campaign Preferences -->
+                            <div class="bg-gray-50 rounded-xl p-6 space-y-6">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <span class="material-icons text-blue-600 text-base">tune</span>
+                                    </div>
+                                    <h4 class="text-lg font-semibold text-gray-900">Campaign Configuration</h4>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <!-- Budget Info -->
+                                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <span class="material-icons text-green-600 text-base">account_balance_wallet</span>
+                                            <h5 class="font-medium text-gray-900">Budget Distribution</h5>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mb-2">$320 daily budget allocated automatically</p>
+                                        <div class="text-xs text-gray-500">
+                                            • Distributed across all campaigns<br>
+                                            • CPA bidding strategy<br>
+                                            • Google Ad Grant optimized
+                                        </div>
+                                    </div>
+
+                                    <!-- Structure Info -->
+                                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <span class="material-icons text-purple-600 text-base">account_tree</span>
+                                            <h5 class="font-medium text-gray-900">Campaign Structure</h5>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mb-2">Professional Search campaigns only</p>
+                                        <div class="text-xs text-gray-500">
+                                            • 2 ad groups per campaign<br>
+                                            • 25 high-volume keywords each<br>
+                                            • 2 responsive search ads per group
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Advanced Options Toggle -->
+                                <div class="border-t border-gray-200 pt-4">
+                                    <button type="button" id="advancedToggle" class="flex items-center space-x-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                                        <span class="material-icons text-base">expand_more</span>
+                                        <span>Advanced Configuration</span>
+                                    </button>
+                                    
+                                    <div id="advancedOptions" class="hidden mt-4 space-y-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Geographic Targeting</label>
+                                                <select class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                    <option value="auto">Auto-detect from website</option>
+                                                    <option value="us">United States</option>
+                                                    <option value="ca">Canada</option>
+                                                    <option value="uk">United Kingdom</option>
+                                                    <option value="au">Australia</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Campaign Priority</label>
+                                                <select class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                    <option value="balanced">Balanced approach</option>
+                                                    <option value="awareness">Brand awareness</option>
+                                                    <option value="conversions">Conversion focused</option>
+                                                    <option value="traffic">Traffic generation</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Enhanced Generate Button -->
+                            <div class="pt-4">
+                                <button 
+                                    type="submit" 
+                                    id="generateBtn"
+                                    class="w-full bg-gradient-to-r from-google-blue to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 px-8 rounded-xl font-semibold text-base shadow-google hover:shadow-google-hover focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none group"
+                                >
+                                    <div class="flex items-center justify-center space-x-3">
+                                        <span class="material-icons group-hover:scale-110 transition-transform duration-200">auto_awesome</span>
+                                        <span id="btnText">Generate Professional Campaigns</span>
+                                        <svg id="loadingSpinner" class="hidden animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    </div>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar with Info and Benefits -->
+            <div class="space-y-6">
+                <!-- Process Overview -->
+                <div class="bg-white rounded-2xl shadow-google border border-gray-200 p-6">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                            <span class="material-icons text-green-600 text-base">timeline</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">How It Works</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span class="text-blue-600 text-xs font-bold">1</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">Website Analysis</p>
+                                <p class="text-xs text-gray-600">AI scrapes and analyzes your entire website content</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span class="text-blue-600 text-xs font-bold">2</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">Keyword Research</p>
+                                <p class="text-xs text-gray-600">Generates high-volume, relevant keywords for each page</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span class="text-blue-600 text-xs font-bold">3</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">Ad Creation</p>
+                                <p class="text-xs text-gray-600">Writes compelling responsive search ads</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span class="text-green-600 text-xs font-bold">4</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">Export Ready</p>
+                                <p class="text-xs text-gray-600">Download CSV files for Google Ads Editor</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Benefits -->
+                <div class="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl border border-blue-200 p-6">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-8 h-8 bg-gradient-to-br from-google-blue to-google-green rounded-lg flex items-center justify-center">
+                            <span class="material-icons text-white text-base">star</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">Key Benefits</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center space-x-3">
+                            <span class="material-icons text-green-600 text-base">check_circle</span>
+                            <span class="text-sm text-gray-700">Google Ad Grant compliant</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="material-icons text-green-600 text-base">check_circle</span>
+                            <span class="text-sm text-gray-700">Professional campaign structure</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="material-icons text-green-600 text-base">check_circle</span>
+                            <span class="text-sm text-gray-700">High-quality keyword research</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="material-icons text-green-600 text-base">check_circle</span>
+                            <span class="text-sm text-gray-700">Optimized ad copy</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="material-icons text-green-600 text-base">check_circle</span>
+                            <span class="text-sm text-gray-700">Ready for Google Ads Editor</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Status -->
+                <div class="bg-white rounded-2xl shadow-google border border-gray-200 p-6">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <span class="material-icons text-gray-600 text-base">monitoring</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">System Status</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">AI Engine</span>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                <span class="text-sm font-medium text-green-600">Online</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Web Scraper</span>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                <span class="text-sm font-medium text-green-600">Ready</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Generation Speed</span>
+                            <span class="text-sm font-medium text-gray-900">~2-3 min</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Progress Section -->
+        <div id="progressSection" class="hidden mt-12 animate-slide-up">
+            <div class="bg-white rounded-2xl shadow-google border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <span class="material-icons text-white animate-spin">autorenew</span>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-white">Generating Your Campaigns</h3>
+                            <p class="text-blue-100">Please wait while we analyze your website and create professional campaigns</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-8">
+                    <!-- Progress Bar -->
+                    <div class="mb-8">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-700">Overall Progress</span>
+                            <span id="progressPercent" class="text-sm font-medium text-blue-600">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progressBar" class="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Steps -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="flex flex-col items-center text-center">
+                            <div id="step1" class="w-16 h-16 bg-gray-200 rounded-2xl flex items-center justify-center mb-3 transition-all duration-300">
+                                <span class="material-icons text-gray-600 text-2xl">language</span>
+                            </div>
+                            <h4 class="text-sm font-semibold text-gray-900 mb-1">Website Analysis</h4>
+                            <p class="text-xs text-gray-500">Scraping and analyzing content</p>
+                            <div id="step1-status" class="mt-2 text-xs text-gray-400">Waiting...</div>
+                        </div>
+                        
+                        <div class="flex flex-col items-center text-center">
+                            <div id="step2" class="w-16 h-16 bg-gray-200 rounded-2xl flex items-center justify-center mb-3 transition-all duration-300">
+                                <span class="material-icons text-gray-600 text-2xl">search</span>
+                            </div>
+                            <h4 class="text-sm font-semibold text-gray-900 mb-1">Keyword Research</h4>
+                            <p class="text-xs text-gray-500">Finding high-volume keywords</p>
+                            <div id="step2-status" class="mt-2 text-xs text-gray-400">Waiting...</div>
+                        </div>
+                        
+                        <div class="flex flex-col items-center text-center">
+                            <div id="step3" class="w-16 h-16 bg-gray-200 rounded-2xl flex items-center justify-center mb-3 transition-all duration-300">
+                                <span class="material-icons text-gray-600 text-2xl">edit</span>
+                            </div>
+                            <h4 class="text-sm font-semibold text-gray-900 mb-1">Ad Creation</h4>
+                            <p class="text-xs text-gray-500">Writing compelling ad copies</p>
+                            <div id="step3-status" class="mt-2 text-xs text-gray-400">Waiting...</div>
+                        </div>
+                        
+                        <div class="flex flex-col items-center text-center">
+                            <div id="step4" class="w-16 h-16 bg-gray-200 rounded-2xl flex items-center justify-center mb-3 transition-all duration-300">
+                                <span class="material-icons text-gray-600 text-2xl">file_download</span>
+                            </div>
+                            <h4 class="text-sm font-semibold text-gray-900 mb-1">Campaign Export</h4>
+                            <p class="text-xs text-gray-500">Building CSV files</p>
+                            <div id="step4-status" class="mt-2 text-xs text-gray-400">Waiting...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Results Section -->
+        <div id="resultsSection" class="hidden mt-12 animate-scale-in">
+            <div class="bg-white rounded-2xl shadow-google border border-gray-200 overflow-hidden">
+                <!-- Results Header -->
+                <div class="bg-gradient-to-r from-green-600 to-blue-600 px-8 py-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                <span class="material-icons text-white text-2xl">check_circle</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold text-white">Campaigns Generated Successfully!</h3>
+                                <p class="text-green-100">Your professional Google Ad Grant campaigns are ready for download</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center text-sm text-white/80">
+                            <span class="material-icons text-base mr-1">schedule</span>
+                            <span id="generationTime">Generated in 2m 34s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8">
+                    <!-- Campaign Summary -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center">
+                            <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                <span class="material-icons text-white">campaign</span>
+                            </div>
+                            <div class="text-2xl font-bold text-blue-900" id="campaignCount">3</div>
+                            <div class="text-sm text-blue-600">Campaigns</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center">
+                            <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                <span class="material-icons text-white">folder</span>
+                            </div>
+                            <div class="text-2xl font-bold text-purple-900" id="adGroupCount">6</div>
+                            <div class="text-sm text-purple-600">Ad Groups</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center">
+                            <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                <span class="material-icons text-white">search</span>
+                            </div>
+                            <div class="text-2xl font-bold text-green-900" id="keywordCount">150</div>
+                            <div class="text-sm text-green-600">Keywords</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 text-center">
+                            <div class="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                <span class="material-icons text-white">ads_click</span>
+                            </div>
+                            <div class="text-2xl font-bold text-orange-900" id="adCount">12</div>
+                            <div class="text-sm text-orange-600">Ads Created</div>
+                        </div>
+                    </div>
+
+                    <!-- Download Files -->
+                    <div class="mb-8">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <span class="material-icons text-base mr-2 text-blue-600">download</span>
+                            Download Campaign Files
+                        </h4>
+                        <div id="downloadLinks" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Download links will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Next Steps Guide -->
+                    <div class="bg-gradient-to-br from-blue-50 to-green-50 rounded-xl p-6 border border-blue-200">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <span class="material-icons text-white text-20">lightbulb</span>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="text-lg font-semibold text-gray-900 mb-3">Next Steps</h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-start space-x-3">
+                                        <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <span class="text-blue-600 text-xs font-bold">1</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">Download Google Ads Editor</p>
+                                            <p class="text-xs text-gray-600">Get the free tool from Google to upload your campaigns</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start space-x-3">
+                                        <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <span class="text-blue-600 text-xs font-bold">2</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">Import CSV Files</p>
+                                            <p class="text-xs text-gray-600">Upload files in order: Campaigns → Ad Groups → Keywords → Ads</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start space-x-3">
+                                        <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <span class="text-green-600 text-xs font-bold">3</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">Review & Launch</p>
+                                            <p class="text-xs text-gray-600">Review your campaigns and post them to your Google Ads account</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                    <button class="inline-flex items-center space-x-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                                        <span class="material-icons text-base">play_circle_outline</span>
+                                        <span>Watch Setup Tutorial</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Generate Another Campaign -->
+                    <div class="mt-8 pt-6 border-t border-gray-200 text-center">
+                        <button 
+                            id="generateAnotherBtn"
+                            class="inline-flex items-center space-x-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all duration-200"
+                        >
+                            <span class="material-icons text-base">add_circle_outline</span>
+                            <span>Generate Another Campaign</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-50 border-t border-gray-200 mt-16">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-2 mb-4">
+                    <div class="w-6 h-6 bg-gradient-to-br from-google-blue to-google-green rounded-lg flex items-center justify-center">
+                        <span class="material-icons text-white text-sm">campaign</span>
+                    </div>
+                    <span class="font-semibold text-gray-900">Ad Grant AI</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">
+                    Professional Google Ad Grant campaign generation powered by AI
+                </p>
+                <div class="flex items-center justify-center space-x-6 text-sm text-gray-500">
+                    <a href="#" class="hover:text-gray-700 transition-colors">Privacy Policy</a>
+                    <a href="#" class="hover:text-gray-700 transition-colors">Terms of Service</a>
+                    <a href="#" class="hover:text-gray-700 transition-colors">Support</a>
+                    <a href="#" class="hover:text-gray-700 transition-colors">Documentation</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

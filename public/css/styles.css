@@ -1,0 +1,486 @@
+/* Enhanced Google-Level UI Styles for Ad Grant AI */
+
+/* Reset and base styles */
+* {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*:focus {
+  outline: none;
+}
+
+/* Enhanced input focus states with Google-style animations */
+input:focus,
+textarea:focus,
+select:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.15);
+  border-color: #4285f4 !important;
+}
+
+/* Button hover effects with Google Material Design principles */
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Progress step animations */
+.step-active {
+  background-color: #4285f4 !important;
+  color: white !important;
+  transform: scale(1.05);
+  box-shadow: 0 8px 16px rgba(66, 133, 244, 0.3);
+}
+
+.step-completed {
+  background-color: #34a853 !important;
+  color: white !important;
+  transform: scale(1);
+  box-shadow: 0 4px 8px rgba(52, 168, 83, 0.2);
+}
+
+/* Enhanced download link hover effects */
+.download-link:hover {
+  background-color: #fafbfc;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(60, 64, 67, 0.15), 0 4px 8px rgba(60, 64, 67, 0.1);
+}
+
+.download-link:active {
+  transform: translateY(-1px);
+}
+
+/* Loading animation for form */
+.form-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.form-loading * {
+  cursor: not-allowed !important;
+}
+
+/* Enhanced fade in animation */
+.fade-in {
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide up animation */
+.animate-slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scale in animation */
+.animate-scale-in {
+  animation: scaleIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Pulse animation for active elements */
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Custom scrollbar with Google styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #dadce0;
+  border-radius: 4px;
+  border: 1px solid #f8f9fa;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #bdc1c6;
+}
+
+::-webkit-scrollbar-corner {
+  background: #f8f9fa;
+}
+
+/* Form validation states */
+.input-error {
+  border-color: #ea4335 !important;
+  box-shadow: 0 0 0 3px rgba(234, 67, 53, 0.1) !important;
+  background-color: #fef7f0 !important;
+}
+
+.input-success {
+  border-color: #34a853 !important;
+  box-shadow: 0 0 0 3px rgba(52, 168, 83, 0.1) !important;
+  background-color: #f0f9f4 !important;
+}
+
+/* Enhanced hover effects for cards */
+.card-hover:hover {
+  box-shadow: 0 8px 25px rgba(60, 64, 67, 0.15), 0 4px 8px rgba(60, 64, 67, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Progress bar animation */
+.progress-bar {
+  width: 0%;
+  height: 3px;
+  background: linear-gradient(90deg, #4285f4, #9c27b0);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 2px;
+}
+
+/* Notification styles */
+.notification {
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 25px rgba(60, 64, 67, 0.15), 0 4px 8px rgba(60, 64, 67, 0.1);
+}
+
+.notification.show {
+  transform: translateX(0);
+}
+
+/* Loading skeleton */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Enhanced focus styles for accessibility */
+*:focus-visible {
+  outline: 2px solid #4285f4;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Page load animation */
+body {
+  animation: pageLoad 0.6s ease-out;
+}
+
+@keyframes pageLoad {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Material Icons sizing fixes */
+.material-icons.text-20 {
+  font-size: 20px;
+}
+
+.material-icons.text-lg {
+  font-size: 18px;
+}
+
+.material-icons.text-base {
+  font-size: 16px;
+}
+
+.material-icons.text-sm {
+  font-size: 14px;
+}
+
+/* Enhanced button states */
+.btn-primary {
+  background: linear-gradient(135deg, #4285f4, #1976d2);
+  border: none;
+  color: white;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+/* Advanced input styling */
+input[type="url"],
+input[type="text"],
+input[type="email"],
+textarea,
+select {
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 12px 16px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input[type="url"]:hover,
+input[type="text"]:hover,
+input[type="email"]:hover,
+textarea:hover,
+select:hover {
+  border-color: #bdc1c6;
+  box-shadow: 0 2px 4px rgba(60, 64, 67, 0.1);
+}
+
+/* Placeholder styling */
+::placeholder {
+  color: #9aa0a6;
+  opacity: 1;
+}
+
+:-ms-input-placeholder {
+  color: #9aa0a6;
+}
+
+::-ms-input-placeholder {
+  color: #9aa0a6;
+}
+
+/* Enhanced shadow utilities */
+.shadow-google {
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.shadow-google-hover {
+  box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+}
+
+.shadow-google-focus {
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+}
+
+/* Logo and branding animations */
+.logo-pulse {
+  animation: logoPulse 2s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* System status indicators */
+.status-indicator {
+  position: relative;
+}
+
+.status-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background-color: #34a853;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+/* Enhanced typography */
+.text-gradient {
+  background: linear-gradient(135deg, #4285f4, #34a853);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Advanced grid layouts */
+.grid-auto-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+/* Interactive elements */
+.interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(60, 64, 67, 0.15);
+}
+
+.interactive:active {
+  transform: translateY(0);
+}
+
+/* Loading states */
+.loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(66, 133, 244, 0.1), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .shadow-google {
+    box-shadow: 0 2px 8px rgba(60, 64, 67, 0.15);
+  }
+  
+  .shadow-google-hover {
+    box-shadow: 0 4px 12px rgba(60, 64, 67, 0.15);
+  }
+  
+  input[type="url"],
+  input[type="text"],
+  input[type="email"],
+  textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-width: 2px;
+  }
+  
+  .shadow-google {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .pulse {
+    animation: none;
+  }
+}
+
+/* Dark mode support (future-ready) */
+@media (prefers-color-scheme: dark) {
+  /* These styles would be activated when dark mode is implemented */
+  /* Currently keeping light mode as per requirements */
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .shadow-google,
+  .shadow-google-hover {
+    box-shadow: none !important;
+  }
+}
+
+/* Selection styling */
+::selection {
+  background-color: rgba(66, 133, 244, 0.2);
+  color: inherit;
+}
+
+::-moz-selection {
+  background-color: rgba(66, 133, 244, 0.2);
+  color: inherit;
+}
