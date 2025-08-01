@@ -169,9 +169,9 @@ AZURE_OPENAI_API_VERSION=2024-02-15-preview
 
 # LinkedIn Integration (Optional)
 ACCOUNT_ID=your_account_id
-UNIPILE_BASE_URL=https://api1.unipile.com:13153
+UNIPILE_BASE_URL=
 UNIPILE_ACCESS_TOKEN=your_token
-COMPANY_MAILBOX_ID=107697030
+COMPANY_MAILBOX_ID=
 
 # Security
 JWT_SECRET=your_jwt_secret
