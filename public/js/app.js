@@ -19,6 +19,7 @@ class CampaignGenerator {
     this.setupAdvancedToggle();
     this.setupCharacterCount();
     this.setupGenerateAnotherBtn();
+    this.setupEmailCapture();
   }
 
   setupInputValidation() {
@@ -170,6 +171,218 @@ class CampaignGenerator {
         this.resetForm();
       });
     }
+  }
+
+  setupEmailCapture() {
+    // Email capture button functionality
+    const requestDownloadBtn = document.getElementById("requestDownloadBtn");
+    const emailModal = document.getElementById("emailModal");
+    const emailModalContent = document.getElementById("emailModalContent");
+    const emailForm = document.getElementById("emailCaptureForm");
+    const cancelEmailBtn = document.getElementById("cancelEmailBtn");
+
+    // Show email modal when request download is clicked
+    if (requestDownloadBtn) {
+      requestDownloadBtn.addEventListener("click", () => {
+        this.showEmailModal();
+      });
+    }
+
+    // Handle email form submission
+    if (emailForm) {
+      emailForm.addEventListener("submit", (e) => {
+        this.handleEmailSubmit(e);
+      });
+    }
+
+    // Cancel button functionality
+    if (cancelEmailBtn) {
+      cancelEmailBtn.addEventListener("click", () => {
+        this.hideEmailModal();
+      });
+    }
+
+    // Close modal on backdrop click
+    if (emailModal) {
+      emailModal.addEventListener("click", (e) => {
+        if (e.target === emailModal) {
+          this.hideEmailModal();
+        }
+      });
+    }
+
+    // Escape key to close modal
+    document.addEventListener("keydown", (e) => {
+      if (
+        e.key === "Escape" &&
+        emailModal &&
+        !emailModal.classList.contains("hidden")
+      ) {
+        this.hideEmailModal();
+      }
+    });
+  }
+
+  showEmailModal() {
+    const emailModal = document.getElementById("emailModal");
+    const emailModalContent = document.getElementById("emailModalContent");
+
+    if (emailModal && emailModalContent) {
+      emailModal.classList.remove("hidden");
+      // Trigger animation
+      setTimeout(() => {
+        emailModalContent.classList.remove("scale-95", "opacity-0");
+        emailModalContent.classList.add("scale-100", "opacity-100");
+      }, 10);
+    }
+  }
+
+  hideEmailModal() {
+    const emailModal = document.getElementById("emailModal");
+    const emailModalContent = document.getElementById("emailModalContent");
+
+    if (emailModal && emailModalContent) {
+      emailModalContent.classList.remove("scale-100", "opacity-100");
+      emailModalContent.classList.add("scale-95", "opacity-0");
+
+      setTimeout(() => {
+        emailModal.classList.add("hidden");
+      }, 300);
+    }
+  }
+
+  async handleEmailSubmit(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const email = formData.get("email");
+    const organizationName = formData.get("organizationName");
+    const consent = formData.get("consent");
+
+    // Get current website URL and campaign data
+    const websiteUrl = document.getElementById("websiteUrl").value;
+    const campaignId = `campaign_${Date.now()}`;
+
+    // Show loading state
+    const sendEmailBtn = document.getElementById("sendEmailBtn");
+    const emailLoadingSpinner = document.getElementById("emailLoadingSpinner");
+
+    if (!sendEmailBtn) {
+      console.error("Send email button not found");
+      throw new Error("Send email button not found");
+    }
+
+    const originalText = sendEmailBtn.textContent;
+    const buttonSpan = sendEmailBtn.querySelector("span");
+
+    sendEmailBtn.disabled = true;
+    if (buttonSpan) {
+      buttonSpan.textContent = "Sending...";
+    } else {
+      sendEmailBtn.textContent = "Sending...";
+    }
+
+    if (emailLoadingSpinner) {
+      emailLoadingSpinner.classList.remove("hidden");
+    }
+
+    try {
+      console.log("📧 Submitting lead capture:", {
+        email,
+        organizationName,
+        websiteUrl,
+      });
+
+      // Submit to lead capture endpoint
+      const response = await fetch("/api/v1/capture-lead", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          organizationName,
+          websiteUrl,
+          campaignId,
+          consent: Boolean(consent),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log("✅ Lead captured successfully:", result);
+
+        // Hide modal
+        this.hideEmailModal();
+
+        // Show success message with mailto link
+        this.showEmailSuccessMessage(result.data.mailtoLink);
+
+        // Reset form
+        document.getElementById("emailCaptureForm").reset();
+      } else {
+        throw new Error(result.error || "Failed to capture lead");
+      }
+    } catch (error) {
+      console.error("❌ Email capture failed:", error);
+      this.showNotification(
+        `Email submission failed: ${error.message}`,
+        "error"
+      );
+    } finally {
+      // Reset button state
+      sendEmailBtn.disabled = false;
+      if (buttonSpan) {
+        buttonSpan.textContent = originalText;
+      } else {
+        sendEmailBtn.textContent = originalText;
+      }
+      if (emailLoadingSpinner) {
+        emailLoadingSpinner.classList.add("hidden");
+      }
+    }
+  }
+
+  showEmailSuccessMessage(mailtoLink) {
+    // Create success modal/notification
+    const notification = document.createElement("div");
+    notification.className =
+      "fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4";
+
+    notification.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-8 text-center animate-scale-in">
+        <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <span class="material-icons text-green-600 text-2xl">mark_email_read</span>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">Email Sent!</h3>
+        <p class="text-gray-600 mb-6">We've prepared your download link and campaign details. Click the button below to send the email.</p>
+        
+        <div class="space-y-3">
+          <a href="${mailtoLink}" class="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all duration-200">
+            <span class="material-icons">email</span>
+            <span>Open Email Client</span>
+          </a>
+          
+          <button onclick="this.parentElement.parentElement.parentElement.remove()" class="block w-full px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200">
+            Close
+          </button>
+        </div>
+        
+        <div class="mt-4 text-xs text-gray-500">
+          Your download link expires in 24 hours
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Auto-remove after 30 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 30000);
   }
 
   resetForm() {
@@ -665,17 +878,8 @@ class CampaignGenerator {
         `;
 
     div.addEventListener("click", () => {
-      this.downloadFile(fileData.content, fileData.name);
-
-      // Add download animation
-      const icon = div.querySelector(".material-icons:last-child");
-      icon.textContent = "check";
-      icon.classList.add("text-green-500");
-
-      setTimeout(() => {
-        icon.textContent = "download";
-        icon.classList.remove("text-green-500");
-      }, 2000);
+      // Show email modal instead of direct download
+      this.showEmailModal();
     });
 
     return div;

@@ -20,6 +20,7 @@ COPY . .
 # Create necessary directories with proper permissions
 RUN mkdir -p exports && \
     mkdir -p logs && \
+    mkdir -p data && \
     chown -R nodejs:nodejs /app
 
 # Create health check script

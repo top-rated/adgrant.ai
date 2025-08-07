@@ -4,17 +4,19 @@
   "description": "Google Ad Grant campaign generator",
   "type": "module",
   "main": "src/index.js",
+  "author": "Rahees Ahmed",
+  "author-uri":"https://github.com/raheesahmed",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "jest",
-    "test:all": "node test/run-tests.js"
+    "dev": "nodemon src/index.js"
+    
   },
   "dependencies": {
     "@langchain/core": "^0.3.56",
     "@langchain/google-genai": "^0.2.16",
     "@langchain/langgraph": "^0.2.72",
     "@langchain/openai": "^0.5.10",
+    "archiver": "^7.0.1",
     "axios": "^1.9.0",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
@@ -28,6 +30,7 @@
     "node-cache": "^5.1.2",
     "node-cron": "^4.0.7",
     "node-fetch": "^3.3.2",
+    "nodemailer": "^7.0.5",
     "redoc-express": "^2.1.0",
     "stripe": "^14.25.0",
     "swagger-jsdoc": "^6.2.8",
@@ -37,6 +40,6 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "nodemon": "^3.1.10",
-    "supertest": "^6.3.3"
+    "supertest": "^6.3.4"
   }
 }

@@ -32,11 +32,22 @@ services:
       - WEB_HOOK_URL=${WEB_HOOK_URL}
       - COMPANY_MAILBOX_ID=${COMPANY_MAILBOX_ID:-107697030}
       - LINKEDIN_COMPANY_NAME=${LINKEDIN_COMPANY_NAME:-ad-grant-ai}
+      # Admin Configuration
+      - ADMIN_USER_NAME=${ADMIN_USER_NAME:-admin@adgrant.ai}
+      - ADMIN_USER_PASSWORD=${ADMIN_USER_PASSWORD}
+      # Email Service Configuration
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
       # External APIs
       - JINJA_API_KEY=${JINJA_API_KEY}
     volumes:
       - ./exports:/app/exports
       - ./logs:/app/logs
+      - ./data:/app/data
     restart: unless-stopped
     healthcheck:
       test:

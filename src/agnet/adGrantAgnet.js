@@ -25,84 +25,8 @@ const tools = [
   convertToCSV,
 ];
 
-// We'll load the prompt dynamically during processing
-let cachedPrompt = null;
-let lastPromptFetchTime = 0;
-const PROMPT_CACHE_TTL = 60000; // 1 minute in milliseconds
-
 // Create a memory store to maintain conversation history
 const memoryStore = new Map();
-
-/**
- * Get the current system prompt with caching
- * @returns {Promise<string>} - The current system prompt
- */
-const getCurrentPrompt = async () => {
-  const now = Date.now();
-
-  // Use cached prompt if it's still fresh
-  if (cachedPrompt && now - lastPromptFetchTime < PROMPT_CACHE_TTL) {
-    return cachedPrompt;
-  }
-
-  try {
-    // Fetch fresh prompt
-    cachedPrompt = await getSystemPrompt();
-    lastPromptFetchTime = now;
-    return cachedPrompt;
-  } catch (error) {
-    console.error("Error fetching system prompt:", error);
-    // If we have a cached version, use it as fallback
-    if (cachedPrompt) {
-      console.log("Using cached prompt as fallback");
-      return cachedPrompt;
-    }
-    // Last resort fallback - throw error
-    throw new Error(
-      "Failed to get system prompt and no cached version available"
-    );
-  }
-};
-
-/**
- * Process a user query and return a response
- * @param {string} threadId - Unique identifier for the conversation thread
- * @param {string} query - User's query/message
- * @returns {Promise<string>} - The assistant's response
- */
-export const processQuery = async (threadId, query) => {
-  // Get current prompt
-  const prompt = await getCurrentPrompt();
-
-  // Initialize or retrieve memory for this thread
-  if (!memoryStore.has(threadId)) {
-    memoryStore.set(threadId, new MemorySaver());
-  }
-  const memory = memoryStore.get(threadId);
-
-  // Create agent with thread-specific memory
-  const agent = createReactAgent({
-    llm: llm,
-    tools: tools,
-    checkpointSaver: memory,
-    stateModifier: prompt,
-  });
-
-  // Prepare input with user's query
-  const inputs = {
-    messages: [{ role: "user", content: query }],
-  };
-  const config = { configurable: { thread_id: threadId } };
-
-  // Process the query with thread_id in the configurable and stream the response
-  const stream = agent.stream(inputs, {
-    ...config,
-    streamMode: "messages",
-  });
-
-  // Return the stream to be handled by the API route
-  return stream;
-};
 
 export const linkedInAgnet = async (threadId, query) => {
   // Get current prompt
@@ -147,26 +71,62 @@ export const generateWebCampaigns = async (
   instructions = ""
 ) => {
   try {
-    console.log(`Starting campaign generation for: ${websiteUrl}`);
+    console.log(
+      `🚀 Starting WEBSITE-SPECIFIC campaign generation for: ${websiteUrl}`
+    );
 
-    // Create web-specific system prompt
-    const webSystemPrompt = `You are an AI-powered Google Ad Grant Campaign Generator for nonprofits. 
+    // Enhanced web-specific system prompt that ensures website content utilization
+    const webSystemPrompt = `You are a Google Ad Grant specialist that creates WEBSITE-SPECIFIC campaigns for nonprofits.
 
-IMPORTANT: When using the read_url_content tool, always call it with an object parameter like this:
-{"url": "https://example.com"}
+CRITICAL INSTRUCTIONS:
+- NEVER use generic templates or assumptions
+- ALWAYS base campaigns on ACTUAL scraped website content
+- Each campaign must be unique to the analyzed website
+- Focus on the organization's specific mission, services, and programs
 
-Your mission is to generate complete Google Ads campaigns from website analysis.
+MANDATORY WORKFLOW:
+1. SCRAPE WEBSITE: Use read_url_content tool with parameter {"url": "${websiteUrl}"}
+2. DEEP ANALYSIS: Extract organization's specific:
+   - Mission and cause focus
+   - Services and programs offered  
+   - Target beneficiaries and audiences
+   - Geographic service areas
+   - Unique value propositions
+   - Key messaging and terminology used
 
-WORKFLOW:
-1. Use read_url_content tool to analyze the website
-2. Extract key themes and services
-3. Generate 2-4 Search campaigns (NO Performance Max)
-4. Create 2 ad groups per campaign
-5. Generate 25 broad match keywords per ad group
-6. Write 2 RSA ads per ad group
-7. Use convert_to_csv tool to create Google Ads Editor file
+3. WEBSITE-SPECIFIC CAMPAIGN CREATION:
+   - Generate 2-4 Search campaigns based on ACTUAL website content
+   - Name campaigns after real services/programs found on website
+   - Create 2 ad groups per campaign reflecting actual website structure
+   
+4. CONTENT-DRIVEN KEYWORD RESEARCH:
+   - Extract 25 broad match keywords per ad group from ACTUAL website content
+   - Use organization's own terminology and service names
+   - Include location-based keywords if geographic focus found
+   - Research related keywords using duckduckgo tools for expansion
+   - Ensure Google Ad Grant compliance (high volume, relevant)
 
-Always aim for Google Ad Grant policy compliance with high search volume keywords.`;
+5. AUTHENTIC AD COPY:
+   - Write 2 RSA ads per ad group using ACTUAL website messaging
+   - Include real organization name, mission, and call-to-actions from website
+   - Incorporate specific programs, services, and impact statements found
+   - Match the tone and style of the original website
+
+6. PROFESSIONAL CSV EXPORT:
+   - Use convert_to_csv tool with complete campaign structure
+   - Include all components: campaigns, ad groups, keywords, ads, extensions
+   - Ensure Google Ads Editor compatibility
+   - Distribute $320 daily budget across campaigns
+
+QUALITY ASSURANCE:
+- Verify all keywords relate to actual website content
+- Ensure ad copy reflects real organization messaging  
+- Check campaign names match actual services/programs
+- Validate Google Ad Grant policy compliance
+
+RESPONSE FORMAT: Always return structured JSON with campaign details and recommendations.
+
+Remember: This campaign must be so specific to the website that it couldn't work for any other organization!`;
     // Initialize or retrieve memory for this thread
     if (!memoryStore.has(threadId)) {
       memoryStore.set(threadId, new MemorySaver());

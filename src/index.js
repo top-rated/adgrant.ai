@@ -8,16 +8,16 @@ import path from "path";
 import { fileURLToPath } from "url";
 import bodyParser from "body-parser";
 import { UnipileClient } from "unipile-node-sdk";
-import { processQuery } from "./agnet/adGrantAgnet.js";
-// ES module equivalent of __dirname
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-import { isAIMessageChunk } from "@langchain/core/messages";
 import { linkedInAgnet, generateWebCampaigns } from "./agnet/adGrantAgnet.js";
 import {
   getSystemPrompt,
   updateSystemPrompt,
 } from "./utils/systemPromptManager.js";
+import { leadManager } from "./utils/leadManager.js";
+import { emailService } from "./services/emailService.js";
 
 // Initialize express app
 const app = express();
@@ -96,6 +96,11 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public", "index.html"));
 });
 
+// Admin panel route
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public", "admin.html"));
+});
+
 // Health check endpoint for Docker
 app.get("/health", (req, res) => {
   res.status(200).json({
@@ -105,61 +110,6 @@ app.get("/health", (req, res) => {
     environment: process.env.NODE_ENV || "development",
     version: process.env.npm_package_version || "1.0.0",
   });
-});
-
-//chat route
-app.post(`${API_PREFIX}/chat`, async (req, res) => {
-  const { threadId, query } = req.body;
-
-  // Set headers for Server-Sent Events
-  res.writeHead(200, {
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache",
-    Connection: "keep-alive",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Cache-Control",
-  });
-
-  try {
-    const stream = await processQuery(threadId, query);
-
-    for await (const [message, _metadata] of stream) {
-      if (isAIMessageChunk(message) && message.tool_call_chunks?.length) {
-        const toolCallData = {
-          type: "tool_call_chunk",
-          content: message.tool_call_chunks[0].args,
-        };
-        res.write(`data: ${JSON.stringify(toolCallData)}\n\n`);
-
-        console.log(
-          `${message.getType()} MESSAGE TOOL CALL CHUNK: ${
-            message.tool_call_chunks[0].args
-          }`
-        );
-      } else if (message.content) {
-        const messageData = {
-          type: "message",
-          content: message.content,
-          messageType: message.getType(),
-        };
-        res.write(`data: ${JSON.stringify(messageData)}\n\n`);
-
-        console.log(`${message.getType()} MESSAGE CONTENT: ${message.content}`);
-      }
-    }
-
-    // Send completion signal
-    res.write(`data: ${JSON.stringify({ type: "complete" })}\n\n`);
-    res.end();
-  } catch (error) {
-    console.error("Chat stream error:", error);
-    const errorData = {
-      type: "error",
-      message: "Failed to fetch response",
-    };
-    res.write(`data: ${JSON.stringify(errorData)}\n\n`);
-    res.end();
-  }
 });
 
 // API route to get system prompt
@@ -233,6 +183,653 @@ app.post(`${API_PREFIX}/generate-campaigns`, async (req, res) => {
   }
 });
 
+// Lead capture endpoint for email collection
+app.post(`${API_PREFIX}/capture-lead`, async (req, res) => {
+  try {
+    const { email, organizationName, websiteUrl, campaignId, consent } =
+      req.body;
+
+    // Validate required fields
+    if (!email || !consent) {
+      return res.status(400).json({
+        success: false,
+        error: "Email and consent are required",
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid email format",
+      });
+    }
+
+    console.log(`📧 Processing lead capture for: ${email}`);
+
+    // Prepare lead data
+    const leadData = {
+      email: email.toLowerCase().trim(),
+      organizationName: organizationName?.trim() || null,
+      websiteUrl: websiteUrl || null,
+      campaignId: campaignId || `campaign_${Date.now()}`,
+      consent: consent === true,
+      ipAddress: req.ip || req.connection.remoteAddress || null,
+      userAgent: req.get("User-Agent") || null,
+    };
+
+    // Check if lead already exists
+    const existingLead = leadManager.findByEmail(leadData.email);
+    let lead;
+
+    if (existingLead) {
+      console.log(`📧 Existing lead found: ${leadData.email}`);
+      lead = existingLead;
+      // Update campaign info if new one is provided
+      if (
+        leadData.campaignId &&
+        leadData.campaignId !== existingLead.campaignId
+      ) {
+        // You could update the existing lead here if needed
+        console.log(
+          `📧 Updating campaign ID for existing lead: ${leadData.campaignId}`
+        );
+      }
+    } else {
+      // Create new lead
+      lead = leadManager.addLead(leadData);
+      if (!lead) {
+        return res.status(500).json({
+          success: false,
+          error: "Failed to save lead information",
+        });
+      }
+    }
+
+    // Generate secure download token
+    const downloadToken = leadManager.generateDownloadToken(
+      lead.id,
+      leadData.campaignId
+    );
+
+    // Send email using the email service
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const emailResult = await emailService.sendCampaignEmail(
+      leadData,
+      downloadToken,
+      baseUrl
+    );
+
+    // Get current lead statistics
+    const stats = leadManager.getStats();
+
+    console.log(`✅ Lead capture successful for: ${email}`);
+    console.log(`📊 Current lead stats:`, stats);
+
+    res.json({
+      success: true,
+      message: "Lead captured successfully",
+      data: {
+        leadId: lead.id,
+        email: lead.email,
+        downloadToken,
+        emailMethod: emailResult.method,
+        mailtoLink: emailResult.mailtoLink || null,
+        messageId: emailResult.messageId || null,
+        expiresIn: "24 hours",
+        campaignId: leadData.campaignId,
+      },
+      stats: {
+        totalLeads: stats.total,
+        todayLeads: stats.today,
+        conversionRate: stats.conversionRate,
+      },
+      emailResult,
+    });
+  } catch (error) {
+    console.error("❌ Error in lead capture:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "Internal server error during lead capture",
+    });
+  }
+});
+
+// Download endpoint for secure file delivery
+app.get(`${API_PREFIX}/download/:token`, async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Validate download token
+    const tokenData = leadManager.validateDownloadToken(token);
+    if (!tokenData) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid or expired download token",
+      });
+    }
+
+    // Find the lead
+    const lead = leadManager.findById(tokenData.leadId);
+    if (!lead) {
+      return res.status(404).json({
+        success: false,
+        error: "Lead not found",
+      });
+    }
+
+    // Record the download
+    leadManager.recordDownload(lead.id);
+
+    // Generate actual CSV files based on the campaign data
+    const campaignData = generateCampaignCSVData(lead);
+
+    // Create ZIP file containing all CSV files
+    const zipBuffer = await createCampaignZip(campaignData, lead);
+
+    // Set headers for file download
+    const filename = `ad-grant-campaigns-${
+      lead.email.split("@")[0]
+    }-${Date.now()}.zip`;
+
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", zipBuffer.length);
+
+    // Send the actual ZIP file
+    res.send(zipBuffer);
+
+    console.log(
+      `📥 Download completed for lead: ${lead.email} (${
+        lead.downloadCount + 1
+      } downloads) - File: ${filename}`
+    );
+  } catch (error) {
+    console.error("❌ Error in download endpoint:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error during download",
+    });
+  }
+});
+
+// Function to generate campaign CSV data
+function generateCampaignCSVData(lead) {
+  const domain = lead.websiteUrl
+    ? new URL(lead.websiteUrl).hostname
+    : "organization";
+  const orgName = lead.organizationName || domain;
+
+  // Generate realistic campaign structure
+  const campaigns = [
+    {
+      name: `${orgName} - Awareness`,
+      status: "Active",
+      budget: 160,
+      type: "Search",
+      bidStrategy: "Target CPA",
+      targetCPA: 25,
+    },
+    {
+      name: `${orgName} - Donations`,
+      status: "Active",
+      budget: 160,
+      type: "Search",
+      bidStrategy: "Target CPA",
+      targetCPA: 30,
+    },
+  ];
+
+  const adGroups = [];
+  const keywords = [];
+  const ads = [];
+
+  campaigns.forEach((campaign, campaignIndex) => {
+    // Create 2 ad groups per campaign
+    for (let i = 1; i <= 2; i++) {
+      const adGroupName = `${campaign.name} - Group ${i}`;
+      adGroups.push({
+        campaign: campaign.name,
+        adGroup: adGroupName,
+        status: "Active",
+        defaultBid: 2.0,
+      });
+
+      // Generate 25 keywords per ad group
+      const keywordSet = generateKeywordsForOrganization(
+        orgName,
+        campaign.name,
+        i
+      );
+      keywordSet.forEach((keyword) => {
+        keywords.push({
+          campaign: campaign.name,
+          adGroup: adGroupName,
+          keyword: keyword,
+          matchType: "Broad",
+          maxCPC: 2.5,
+        });
+      });
+
+      // Generate 2 RSA ads per ad group
+      for (let j = 1; j <= 2; j++) {
+        ads.push({
+          campaign: campaign.name,
+          adGroup: adGroupName,
+          adType: "Responsive Search Ad",
+          headlines: generateHeadlines(orgName, campaign.name),
+          descriptions: generateDescriptions(orgName, campaign.name),
+          finalURL: lead.websiteUrl || "https://example.com",
+          status: "Active",
+        });
+      }
+    }
+  });
+
+  return { campaigns, adGroups, keywords, ads };
+}
+
+// Generate keywords based on organization and campaign type
+function generateKeywordsForOrganization(orgName, campaignName, groupNum) {
+  const baseKeywords = [
+    "nonprofit",
+    "charity",
+    "donate",
+    "volunteer",
+    "support",
+    "help",
+    "community",
+    "organization",
+    "foundation",
+    "giving",
+    "fundraising",
+    "cause",
+    "mission",
+    "social good",
+    "make a difference",
+    "change lives",
+    "impact",
+    "philanthropy",
+    "humanitarian",
+    "outreach",
+    "assistance",
+    "aid",
+    "relief",
+    "service",
+  ];
+
+  const orgKeywords = [
+    orgName.toLowerCase(),
+    `${orgName.toLowerCase()} charity`,
+    `${orgName.toLowerCase()} nonprofit`,
+    `${orgName.toLowerCase()} donate`,
+    `${orgName.toLowerCase()} volunteer`,
+  ];
+
+  const campaignSpecific = campaignName.includes("Awareness")
+    ? [
+        "learn about",
+        "information",
+        "awareness",
+        "education",
+        "programs",
+        "services",
+        "what we do",
+        "our mission",
+        "about us",
+        "get involved",
+      ]
+    : [
+        "donate now",
+        "make donation",
+        "financial support",
+        "contribute",
+        "help fund",
+        "sponsor",
+        "give money",
+        "online donation",
+        "secure donation",
+      ];
+
+  // Combine and take 25 keywords
+  const allKeywords = [...baseKeywords, ...orgKeywords, ...campaignSpecific];
+  return allKeywords.slice(0, 25);
+}
+
+// Generate headlines for RSA ads
+function generateHeadlines(orgName, campaignName) {
+  const headlines = [
+    `Support ${orgName} Today`,
+    `Make a Difference Now`,
+    `Help Change Lives`,
+    `Your Donation Matters`,
+    `Join Our Mission`,
+    `Transform Communities`,
+    `Create Lasting Impact`,
+    `Be Part of Change`,
+    `Help Those in Need`,
+    `Support Our Cause`,
+    `Make Hope Possible`,
+    `Your Help is Needed`,
+    `Together We Can Help`,
+    `Change Lives Today`,
+    `Support Our Work`,
+  ];
+
+  return headlines.slice(0, 15); // RSA needs up to 15 headlines
+}
+
+// Generate descriptions for RSA ads
+function generateDescriptions(orgName, campaignName) {
+  const descriptions = [
+    `Join ${orgName} in making a real difference in people's lives. Your support helps us continue our vital work.`,
+    `Every donation to ${orgName} helps create positive change. Support our mission today and see the impact.`,
+    `Help us transform communities through our programs. Your contribution makes our work possible.`,
+    `Make a lasting impact with ${orgName}. Your support helps us reach more people who need assistance.`,
+  ];
+
+  return descriptions;
+}
+
+// Function to create ZIP file with all CSV files
+async function createCampaignZip(data, lead) {
+  const archiver = require("archiver");
+  const { Readable } = require("stream");
+
+  const archive = archiver("zip", { zlib: { level: 9 } });
+  const chunks = [];
+
+  // Collect ZIP data
+  archive.on("data", (chunk) => chunks.push(chunk));
+
+  return new Promise((resolve, reject) => {
+    archive.on("end", () => {
+      const buffer = Buffer.concat(chunks);
+      resolve(buffer);
+    });
+
+    archive.on("error", reject);
+
+    // Generate CSV content for each file
+    const campaignsCSV = generateCampaignsCSV(data.campaigns);
+    const adGroupsCSV = generateAdGroupsCSV(data.adGroups);
+    const keywordsCSV = generateKeywordsCSV(data.keywords);
+    const adsCSV = generateAdsCSV(data.ads);
+
+    // Add files to ZIP
+    archive.append(campaignsCSV, { name: "campaigns.csv" });
+    archive.append(adGroupsCSV, { name: "ad_groups.csv" });
+    archive.append(keywordsCSV, { name: "keywords.csv" });
+    archive.append(adsCSV, { name: "ads.csv" });
+    archive.append(generateReadme(lead), { name: "README.txt" });
+
+    archive.finalize();
+  });
+}
+
+// CSV generation functions
+function generateCampaignsCSV(campaigns) {
+  const headers = "Campaign,Status,Budget,Type,Bid Strategy,Target CPA\n";
+  const rows = campaigns
+    .map(
+      (c) =>
+        `"${c.name}","${c.status}",${c.budget},"${c.type}","${c.bidStrategy}",${c.targetCPA}`
+    )
+    .join("\n");
+  return headers + rows;
+}
+
+function generateAdGroupsCSV(adGroups) {
+  const headers = "Campaign,Ad Group,Status,Default Bid\n";
+  const rows = adGroups
+    .map(
+      (ag) => `"${ag.campaign}","${ag.adGroup}","${ag.status}",${ag.defaultBid}`
+    )
+    .join("\n");
+  return headers + rows;
+}
+
+function generateKeywordsCSV(keywords) {
+  const headers = "Campaign,Ad Group,Keyword,Match Type,Max CPC\n";
+  const rows = keywords
+    .map(
+      (k) =>
+        `"${k.campaign}","${k.adGroup}","${k.keyword}","${k.matchType}",${k.maxCPC}`
+    )
+    .join("\n");
+  return headers + rows;
+}
+
+function generateAdsCSV(ads) {
+  const headers =
+    "Campaign,Ad Group,Ad Type,Headlines,Descriptions,Final URL,Status\n";
+  const rows = ads
+    .map(
+      (ad) =>
+        `"${ad.campaign}","${ad.adGroup}","${ad.adType}","${ad.headlines.join(
+          " | "
+        )}","${ad.descriptions.join(" | ")}","${ad.finalURL}","${ad.status}"`
+    )
+    .join("\n");
+  return headers + rows;
+}
+
+function generateReadme(lead) {
+  return `Google Ads Editor Import Instructions
+
+Generated for: ${lead.email}
+Organization: ${lead.organizationName || "N/A"}
+Website: ${lead.websiteUrl || "N/A"}
+Generated: ${new Date().toLocaleString()}
+
+IMPORT ORDER (CRITICAL):
+1. campaigns.csv
+2. ad_groups.csv  
+3. keywords.csv
+4. ads.csv
+
+HOW TO IMPORT:
+1. Open Google Ads Editor
+2. Select your Google Ad Grant account
+3. File > Import > From file
+4. Import files in the order listed above
+5. Review all campaigns before posting
+6. Click "Post" to upload to Google Ads
+
+IMPORTANT NOTES:
+- Ensure your Google Ad Grant account is approved
+- Review budgets and bids before posting
+- Monitor campaign performance weekly
+- Adjust keywords based on search terms report
+
+Need help? Contact support with your Campaign ID: ${lead.campaignId}
+`;
+}
+
+// Lead statistics endpoint (optional - for admin/monitoring)
+app.get(`${API_PREFIX}/lead-stats`, async (req, res) => {
+  try {
+    const stats = leadManager.getStats();
+    res.json({
+      success: true,
+      stats,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching lead stats:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch statistics",
+    });
+  }
+});
+
+// Admin authentication endpoint
+app.post(`${API_PREFIX}/admin/login`, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Validate credentials against environment variables
+    const adminUsername = process.env.ADMIN_USER_NAME;
+    const adminPassword = process.env.ADMIN_USER_PASSWORD;
+
+    if (!adminUsername || !adminPassword) {
+      return res.status(500).json({
+        success: false,
+        error: "Admin credentials not configured",
+      });
+    }
+
+    if (username !== adminUsername || password !== adminPassword) {
+      console.log(`🚫 Admin login failed for username: ${username}`);
+      return res.status(401).json({
+        success: false,
+        error: "Invalid credentials",
+      });
+    }
+
+    console.log(`✅ Admin login successful for: ${username}`);
+
+    // For now, we'll use a simple session approach
+    const sessionToken =
+      Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      token: sessionToken,
+      user: {
+        username: adminUsername,
+        role: "admin",
+        loginTime: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in admin login:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error during login",
+    });
+  }
+});
+
+// Admin dashboard data endpoint
+app.get(`${API_PREFIX}/admin/dashboard`, async (req, res) => {
+  try {
+    // Get comprehensive stats
+    const leadStats = leadManager.getStats();
+
+    // Get recent leads (last 10)
+    const allLeads = leadManager.loadLeads();
+    const recentLeads = allLeads
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10)
+      .map((lead) => ({
+        id: lead.id,
+        email: lead.email,
+        organizationName: lead.organizationName,
+        websiteUrl: lead.websiteUrl,
+        createdAt: lead.createdAt,
+        downloadCount: lead.downloadCount,
+        lastDownload: lead.lastDownload,
+      }));
+
+    // Calculate additional metrics
+    const totalLeads = allLeads.length;
+    const leadsWithDownloads = allLeads.filter(
+      (lead) => lead.downloadCount > 0
+    ).length;
+    const averageDownloads =
+      totalLeads > 0
+        ? (
+            allLeads.reduce((sum, lead) => sum + lead.downloadCount, 0) /
+            totalLeads
+          ).toFixed(2)
+        : 0;
+
+    const dashboardData = {
+      overview: {
+        totalLeads: leadStats.total,
+        todayLeads: leadStats.today,
+        thisWeekLeads: leadStats.thisWeek,
+        thisMonthLeads: leadStats.thisMonth,
+        conversionRate: leadStats.conversionRate,
+        totalDownloads: leadStats.totalDownloads,
+        averageDownloads: parseFloat(averageDownloads),
+      },
+      recentActivity: recentLeads,
+      systemInfo: {
+        uptime: process.uptime(),
+        nodeVersion: process.version,
+        environment: process.env.NODE_ENV || "development",
+        lastRestart: new Date().toISOString(),
+      },
+    };
+
+    res.json({
+      success: true,
+      data: dashboardData,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching admin dashboard data:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch dashboard data",
+    });
+  }
+});
+
+// Admin leads management endpoint
+app.get(`${API_PREFIX}/admin/leads`, async (req, res) => {
+  try {
+    const { page = 1, limit = 50, search = "" } = req.query;
+    const allLeads = leadManager.loadLeads();
+
+    // Filter leads if search query provided
+    let filteredLeads = allLeads;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredLeads = allLeads.filter(
+        (lead) =>
+          lead.email.toLowerCase().includes(searchLower) ||
+          (lead.organizationName &&
+            lead.organizationName.toLowerCase().includes(searchLower)) ||
+          (lead.websiteUrl &&
+            lead.websiteUrl.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Sort by creation date (newest first)
+    filteredLeads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Paginate results
+    const startIndex = (page - 1) * limit;
+    const paginatedLeads = filteredLeads.slice(
+      startIndex,
+      startIndex + parseInt(limit)
+    );
+
+    res.json({
+      success: true,
+      data: {
+        leads: paginatedLeads,
+        pagination: {
+          total: filteredLeads.length,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(filteredLeads.length / limit),
+        },
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error fetching leads:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch leads data",
+    });
+  }
+});
+
 // Unipile configuration
 const UNIPILE_BASE_URL = process.env.UNIPILE_BASE_URL;
 const UNIPILE_ACCESS_TOKEN = process.env.UNIPILE_ACCESS_TOKEN;
@@ -243,6 +840,123 @@ const AUTO_REPLY_MESSAGE = "Thanks! I will be back soon 😊";
 
 // Store processed message IDs to avoid duplicate replies
 const processedMessages = new Set();
+
+// Enhanced message tracking with timestamps
+const messageTracker = new Map();
+const DUPLICATE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Comprehensive self-message detection to prevent AI loops
+ * @param {Object} sender - Sender information from webhook
+ * @param {string} messageText - The message content
+ * @param {string} accountId - Account ID from webhook
+ * @returns {boolean} - True if message should be ignored
+ */
+function isSelfMessage(sender, messageText, accountId) {
+  const selfIdentifiers = [
+    "top-voice.ai",
+    "Google Ad Grant AI",
+    "ad-grant-ai",
+    "lisa green",
+    "107697030", // Company ID
+    "ad-grant-ai", // Additional identifier
+  ];
+
+  // Check sender name/ID
+  if (sender?.attendee_name) {
+    const senderName = sender.attendee_name.toLowerCase();
+    if (selfIdentifiers.some((id) => senderName.includes(id.toLowerCase()))) {
+      console.log(
+        `🚫 Blocked: Self-message detected from attendee_name: ${sender.attendee_name}`
+      );
+      return true;
+    }
+  }
+
+  // Check sender provider ID
+  if (sender?.attendee_provider_id) {
+    const providerId = sender.attendee_provider_id.toString();
+    if (selfIdentifiers.includes(providerId)) {
+      console.log(
+        `🚫 Blocked: Self-message detected from provider_id: ${providerId}`
+      );
+      return true;
+    }
+  }
+
+  // Check account ID match
+  if (accountId === "107697030") {
+    console.log(`🚫 Blocked: Message from our own account ID: ${accountId}`);
+    return true;
+  }
+
+  // Check message content patterns that indicate AI responses
+  if (messageText) {
+    const aiResponsePatterns = [
+      "Thanks! I will be back soon",
+      "CAMPAIGN GENERATION COMPLETE",
+      "Here's what I'll do for your organization",
+      "Hi there!",
+      "Thanks for sharing your website URL",
+      "Starting the analysis now",
+      "Your Google Ad Grant campaigns are ready",
+      "I'm having trouble accessing",
+      "Could you please:",
+      "Thanks for your patience",
+      "Your campaign generation is taking",
+    ];
+
+    const lowerCaseMessage = messageText.toLowerCase();
+    for (const pattern of aiResponsePatterns) {
+      if (lowerCaseMessage.includes(pattern.toLowerCase())) {
+        console.log(`🚫 Blocked: AI response pattern detected: "${pattern}"`);
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Check for duplicate messages based on content and timing
+ * @param {string} messageId - Message ID
+ * @param {string} chatId - Chat ID
+ * @param {string} messageText - Message content
+ * @returns {boolean} - True if duplicate detected
+ */
+function isDuplicateMessage(messageId, chatId, messageText) {
+  const now = Date.now();
+  const messageKey = `${chatId}-${messageText?.substring(0, 100)}`;
+
+  // Check if we've seen this exact message recently
+  if (messageTracker.has(messageKey)) {
+    const lastSeen = messageTracker.get(messageKey);
+    if (now - lastSeen < DUPLICATE_THRESHOLD) {
+      console.log(
+        `🚫 Blocked: Duplicate message detected within ${
+          DUPLICATE_THRESHOLD / 1000
+        }s`
+      );
+      return true;
+    }
+  }
+
+  // Track this message
+  messageTracker.set(messageKey, now);
+
+  // Clean up old entries (keep tracker size manageable)
+  if (messageTracker.size > 1000) {
+    const cutoff = now - DUPLICATE_THRESHOLD;
+    for (const [key, timestamp] of messageTracker.entries()) {
+      if (timestamp < cutoff) {
+        messageTracker.delete(key);
+      }
+    }
+  }
+
+  return false;
+}
 
 // Initialize Unipile client
 const client = new UnipileClient(UNIPILE_BASE_URL, UNIPILE_ACCESS_TOKEN);
@@ -271,7 +985,7 @@ async function sendReply(accountId, chatId, message, originalMessageId) {
 }
 
 // Main webhook endpoint
-app.post(`${API_PREFIX}/webhook`, async (req, res) => {
+app.post(`${API_PREFIX}/adgrant/webhook`, async (req, res) => {
   try {
     console.log("\n🔔 Webhook received!");
     console.log("Headers:", req.headers);
@@ -314,24 +1028,22 @@ app.post(`${API_PREFIX}/webhook`, async (req, res) => {
         .json({ status: "ignored", reason: "already_processed" });
     }
 
-    // Skip if the message is from ourselves (avoid infinite loops)
-    if (
-      sender?.attendee_name &&
-      (sender.attendee_name.toLowerCase().includes("top-voice.ai") ||
-        sender.attendee_name.toLowerCase().includes("Google Ad Grant AI") ||
-        sender.attendee_name.toLowerCase().includes("lisa green") ||
-        sender.attendee_provider_id === "107697030")
-    ) {
-      console.log("⚠️  Message from our own account, skipping");
-      return res.status(200).json({ status: "ignored", reason: "own_message" });
+    // Enhanced self-message detection using comprehensive filtering
+    if (isSelfMessage(sender, messageText, accountId)) {
+      return res.status(200).json({
+        status: "ignored",
+        reason: "self_message_detected",
+        details: "Message identified as AI-generated or from our own account",
+      });
     }
 
-    // Also skip if message text matches our auto-reply (additional safety)
-    if (messageText && messageText.trim() === AUTO_REPLY_MESSAGE.trim()) {
-      console.log("⚠️  Message matches our auto-reply text, skipping");
-      return res
-        .status(200)
-        .json({ status: "ignored", reason: "auto_reply_detected" });
+    // Check for duplicate messages
+    if (isDuplicateMessage(messageId, chatId, messageText)) {
+      return res.status(200).json({
+        status: "ignored",
+        reason: "duplicate_message",
+        details: "Similar message received recently",
+      });
     }
 
     // Mark message as processed

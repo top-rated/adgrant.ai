@@ -25,6 +25,10 @@ UNIPILE_CONFIGURATION.md
 keys.md
 /gpts/
 test.env
+colors.md
+plan.md
+/data/
+chat-summery.md
 gpts.md
 system_prompt.md
 .env
