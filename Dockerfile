@@ -25,7 +25,7 @@ RUN mkdir -p exports && \
     chown -R nodejs:nodejs /app
 
 # Create init script to fix volume permissions at runtime
-RUN echo '#!/bin/sh\n\
+RUN printf '#!/bin/sh\n\
 # Fix permissions for mounted volumes\n\
 mkdir -p /app/data /app/exports /app/logs\n\
 chmod -R 777 /app/data /app/exports /app/logs\n\
@@ -35,7 +35,8 @@ if [ ! -f /app/data/leads.json ]; then\n\
   chmod 666 /app/data/leads.json\n\
 fi\n\
 # Switch to nodejs user and start the main application\n\
-exec su-exec nodejs "$@"' > /app/init.sh && chmod +x /app/init.sh
+exec su-exec nodejs "$@"\n' > /app/init.sh && \
+chmod +x /app/init.sh
 
 # Install su-exec for user switching in init script
 RUN apk add --no-cache su-exec
