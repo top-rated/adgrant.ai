@@ -8,6 +8,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import bodyParser from "body-parser";
 import { UnipileClient } from "unipile-node-sdk";
+import archiver from "archiver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -534,9 +535,6 @@ function generateDescriptions(orgName, campaignName) {
 
 // Function to create ZIP file with all CSV files
 async function createCampaignZip(data, lead) {
-  const archiver = require("archiver");
-  const { Readable } = require("stream");
-
   const archive = archiver("zip", { zlib: { level: 9 } });
   const chunks = [];
 
@@ -831,7 +829,9 @@ app.get(`${API_PREFIX}/admin/leads`, async (req, res) => {
 });
 
 // Unipile configuration
-const UNIPILE_BASE_URL = process.env.UNIPILE_BASE_URL;
+// Unipile configuration
+const UNIPILE_BASE_URL =
+  process.env.UNIPILE_BASE_URL || "https://api1.unipile.com:13153";
 const UNIPILE_ACCESS_TOKEN = process.env.UNIPILE_ACCESS_TOKEN;
 const ACCOUNT_ID = process.env.ACCOUNT_ID;
 
@@ -840,123 +840,6 @@ const AUTO_REPLY_MESSAGE = "Thanks! I will be back soon 😊";
 
 // Store processed message IDs to avoid duplicate replies
 const processedMessages = new Set();
-
-// Enhanced message tracking with timestamps
-const messageTracker = new Map();
-const DUPLICATE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
-
-/**
- * Comprehensive self-message detection to prevent AI loops
- * @param {Object} sender - Sender information from webhook
- * @param {string} messageText - The message content
- * @param {string} accountId - Account ID from webhook
- * @returns {boolean} - True if message should be ignored
- */
-function isSelfMessage(sender, messageText, accountId) {
-  const selfIdentifiers = [
-    "top-voice.ai",
-    "Google Ad Grant AI",
-    "ad-grant-ai",
-    "lisa green",
-    "107697030", // Company ID
-    "ad-grant-ai", // Additional identifier
-  ];
-
-  // Check sender name/ID
-  if (sender?.attendee_name) {
-    const senderName = sender.attendee_name.toLowerCase();
-    if (selfIdentifiers.some((id) => senderName.includes(id.toLowerCase()))) {
-      console.log(
-        `🚫 Blocked: Self-message detected from attendee_name: ${sender.attendee_name}`
-      );
-      return true;
-    }
-  }
-
-  // Check sender provider ID
-  if (sender?.attendee_provider_id) {
-    const providerId = sender.attendee_provider_id.toString();
-    if (selfIdentifiers.includes(providerId)) {
-      console.log(
-        `🚫 Blocked: Self-message detected from provider_id: ${providerId}`
-      );
-      return true;
-    }
-  }
-
-  // Check account ID match
-  if (accountId === "107697030") {
-    console.log(`🚫 Blocked: Message from our own account ID: ${accountId}`);
-    return true;
-  }
-
-  // Check message content patterns that indicate AI responses
-  if (messageText) {
-    const aiResponsePatterns = [
-      "Thanks! I will be back soon",
-      "CAMPAIGN GENERATION COMPLETE",
-      "Here's what I'll do for your organization",
-      "Hi there!",
-      "Thanks for sharing your website URL",
-      "Starting the analysis now",
-      "Your Google Ad Grant campaigns are ready",
-      "I'm having trouble accessing",
-      "Could you please:",
-      "Thanks for your patience",
-      "Your campaign generation is taking",
-    ];
-
-    const lowerCaseMessage = messageText.toLowerCase();
-    for (const pattern of aiResponsePatterns) {
-      if (lowerCaseMessage.includes(pattern.toLowerCase())) {
-        console.log(`🚫 Blocked: AI response pattern detected: "${pattern}"`);
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-/**
- * Check for duplicate messages based on content and timing
- * @param {string} messageId - Message ID
- * @param {string} chatId - Chat ID
- * @param {string} messageText - Message content
- * @returns {boolean} - True if duplicate detected
- */
-function isDuplicateMessage(messageId, chatId, messageText) {
-  const now = Date.now();
-  const messageKey = `${chatId}-${messageText?.substring(0, 100)}`;
-
-  // Check if we've seen this exact message recently
-  if (messageTracker.has(messageKey)) {
-    const lastSeen = messageTracker.get(messageKey);
-    if (now - lastSeen < DUPLICATE_THRESHOLD) {
-      console.log(
-        `🚫 Blocked: Duplicate message detected within ${
-          DUPLICATE_THRESHOLD / 1000
-        }s`
-      );
-      return true;
-    }
-  }
-
-  // Track this message
-  messageTracker.set(messageKey, now);
-
-  // Clean up old entries (keep tracker size manageable)
-  if (messageTracker.size > 1000) {
-    const cutoff = now - DUPLICATE_THRESHOLD;
-    for (const [key, timestamp] of messageTracker.entries()) {
-      if (timestamp < cutoff) {
-        messageTracker.delete(key);
-      }
-    }
-  }
-
-  return false;
-}
 
 // Initialize Unipile client
 const client = new UnipileClient(UNIPILE_BASE_URL, UNIPILE_ACCESS_TOKEN);
@@ -984,14 +867,13 @@ async function sendReply(accountId, chatId, message, originalMessageId) {
   }
 }
 
-// Main webhook endpoint
-app.post(`${API_PREFIX}/adgrant/webhook`, async (req, res) => {
+// Updated webhook endpoint with comprehensive error handling
+app.post("/api/v1/adgrant/webhook", async (req, res) => {
   try {
     console.log("\n🔔 Webhook received!");
-    console.log("Headers:", req.headers);
-    console.log("Body:", JSON.stringify(req.body, null, 2));
 
     const webhookData = req.body;
+    console.log(webhookData);
 
     // Extract message details from Unipile webhook format
     const messageId = webhookData.message_id;
@@ -1028,32 +910,119 @@ app.post(`${API_PREFIX}/adgrant/webhook`, async (req, res) => {
         .json({ status: "ignored", reason: "already_processed" });
     }
 
-    // Enhanced self-message detection using comprehensive filtering
-    if (isSelfMessage(sender, messageText, accountId)) {
-      return res.status(200).json({
-        status: "ignored",
-        reason: "self_message_detected",
-        details: "Message identified as AI-generated or from our own account",
-      });
+    // Skip if the message is from ourselves (avoid infinite loops)
+    if (
+      sender?.attendee_name &&
+      (sender.attendee_name.toLowerCase().includes("google ad grant ai") ||
+        sender.attendee_name.toLowerCase().includes("ad grant ai") ||
+        sender.attendee_name.toLowerCase().includes("lisa green") ||
+        sender.attendee_provider_id === "79429914" ||
+        sender.attendee_provider_id === "107697030")
+    ) {
+      console.log("⚠️  Message from our own account, skipping");
+      console.log(
+        `🔍 Detected own message from: ${sender.attendee_name} (ID: ${sender.attendee_provider_id})`
+      );
+      return res.status(200).json({ status: "ignored", reason: "own_message" });
     }
 
-    // Check for duplicate messages
-    if (isDuplicateMessage(messageId, chatId, messageText)) {
-      return res.status(200).json({
-        status: "ignored",
-        reason: "duplicate_message",
-        details: "Similar message received recently",
-      });
+    // Also skip if message text matches our auto-reply or contains AI response patterns (additional safety)
+    const aiResponsePatterns = [
+      AUTO_REPLY_MESSAGE.trim(),
+      "Thank you for your message!",
+      "If you're ready to move forward",
+      "please share your nonprofit",
+      "website URL with me",
+      "I'll analyze it to create",
+      "tailored Google Ad Grant",
+      "We appear to have entered an infinite response loop",
+      "It seems we're having a bit of back-and-forth",
+    ];
+
+    const messageContainsAIPattern = aiResponsePatterns.some(
+      (pattern) =>
+        messageText && messageText.toLowerCase().includes(pattern.toLowerCase())
+    );
+
+    if (messageContainsAIPattern) {
+      console.log("⚠️  Message contains AI response patterns, skipping");
+      console.log(
+        `🔍 Detected AI pattern in message: ${messageText?.substring(
+          0,
+          100
+        )}...`
+      );
+      return res
+        .status(200)
+        .json({ status: "ignored", reason: "ai_response_pattern_detected" });
     }
 
     // Mark message as processed
     processedMessages.add(messageId);
 
+    // Check if usage middleware has set a limit exceeded response
+    if (req.limitExceededResponse) {
+      console.log(
+        `🚫 Usage limit exceeded for user ${chatId}, sending limit exceeded message`
+      );
+
+      try {
+        // Send the limit exceeded message (includes email request or checkout link)
+        await sendReply(
+          accountId,
+          chatId,
+          req.limitExceededResponse,
+          messageId
+        );
+
+        res.status(200).json({
+          status: "limit_exceeded",
+          message: "Usage limit exceeded message sent",
+          messageId,
+          chatId,
+          threadId: chatId,
+          reply: req.limitExceededResponse?.substring(0, 200) + "...", // Truncate for logging
+        });
+      } catch (replyError) {
+        console.error(
+          "❌ Failed to send limit exceeded message:",
+          replyError.message
+        );
+
+        // Fallback to auto-reply if sending limit message fails
+        try {
+          console.log(
+            "🔄 Falling back to auto-reply due to limit message error"
+          );
+          await sendReply(accountId, chatId, AUTO_REPLY_MESSAGE, messageId);
+          res.status(200).json({
+            status: "fallback_success",
+            message: "Fallback auto-reply sent due to limit message error",
+            messageId,
+            chatId,
+            error: replyError.message,
+            reply: AUTO_REPLY_MESSAGE,
+          });
+        } catch (fallbackError) {
+          console.error("❌ Even fallback failed:", fallbackError.message);
+          res.status(200).json({
+            status: "webhook_received",
+            error: "failed_to_reply",
+            messageId,
+            chatId,
+            limitError: replyError.message,
+            fallbackError: fallbackError.message,
+          });
+        }
+      }
+      return; // Important: return here to avoid processing the AI query
+    }
+
     // Process the query using LinkedIn chatbot and send intelligent reply
     try {
       console.log(`🤖 Processing LinkedIn query with threadId: ${chatId}`);
 
-      // Use linkedInAgnet to generate intelligent response
+      // Use processLinkedInQuery to generate intelligent response
       const intelligentResponse = await linkedInAgnet(chatId, messageText);
 
       console.log(
