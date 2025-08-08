@@ -36,15 +36,31 @@ export class LeadManager {
   }
 
   /**
-   * Save leads to file
+   * Save leads to file with improved error handling
    */
   saveLeads(leads) {
     try {
-      fs.writeFileSync(this.leadsFile, JSON.stringify(leads, null, 2));
+      // Ensure the data directory exists before writing
+      this.ensureDataDirectory();
+
+      // Try to write the file
+      fs.writeFileSync(this.leadsFile, JSON.stringify(leads, null, 2), {
+        mode: 0o666,
+      });
       return true;
     } catch (error) {
       console.error("Error saving leads:", error);
-      return false;
+
+      // Try to create a backup path if main path fails
+      try {
+        const backupPath = path.join(process.cwd(), "leads-backup.json");
+        fs.writeFileSync(backupPath, JSON.stringify(leads, null, 2));
+        console.log(`📁 Saved leads to backup location: ${backupPath}`);
+        return true;
+      } catch (backupError) {
+        console.error("Error saving to backup location:", backupError);
+        return false;
+      }
     }
   }
 

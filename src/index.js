@@ -914,7 +914,7 @@ app.post("/api/v1/webhook", async (req, res) => {
     if (
       sender?.attendee_name &&
       (sender.attendee_name.toLowerCase().includes("google ad grant ai") ||
-        sender.attendee_name.toLowerCase().includes("ad grant ai") ||
+        sender.attendee_name.toLowerCase().includes("ad-grant-ai") ||
         sender.attendee_name.toLowerCase().includes("lisa green") ||
         sender.attendee_provider_id === "79429914" ||
         sender.attendee_provider_id === "107697030")

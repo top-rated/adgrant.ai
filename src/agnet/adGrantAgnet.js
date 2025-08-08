@@ -160,7 +160,8 @@ Focus on creating campaigns that will maximize the nonprofit's $10,000 monthly G
     // Process the request
     const agentFinalState = await agent.invoke(
       { messages: [new HumanMessage(query)] },
-      { configurable: { thread_id: threadId } }
+      { configurable: { thread_id: threadId } },
+      { recursionLimit: 100 }
     );
 
     const response =
