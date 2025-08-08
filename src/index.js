@@ -868,7 +868,7 @@ async function sendReply(accountId, chatId, message, originalMessageId) {
 }
 
 // Updated webhook endpoint with comprehensive error handling
-app.post("/api/v1/adgrant/webhook", async (req, res) => {
+app.post("/api/v1/webhook", async (req, res) => {
   try {
     console.log("\n🔔 Webhook received!");
 
