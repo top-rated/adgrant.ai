@@ -185,20 +185,53 @@ export class LeadManager {
    */
   validateDownloadToken(token) {
     try {
+      console.log(`🔍 Validating download token: ${token}`);
+
       const parts = token.split("_");
-      if (parts.length !== 4) return null;
+      console.log(`📝 Token parts (${parts.length}):`, parts);
 
-      const [leadId, campaignId, timestamp, random] = parts;
-      const tokenAge = Date.now() - parseInt(timestamp);
-
-      // Token expires after 24 hours
-      if (tokenAge > 24 * 60 * 60 * 1000) {
+      if (parts.length < 4) {
+        console.log(
+          `❌ Invalid token format: Expected at least 4 parts, got ${parts.length}`
+        );
         return null;
       }
 
+      // Work backwards from the end since timestamp and random are predictable
+      const random = parts[parts.length - 1];
+      const timestamp = parts[parts.length - 2];
+
+      // Validate timestamp is numeric
+      if (!/^\d+$/.test(timestamp)) {
+        console.log(`❌ Invalid timestamp format: ${timestamp}`);
+        return null;
+      }
+
+      const leadId = parts[0];
+      const campaignId = parts.slice(1, parts.length - 2).join("_");
+
+      console.log(`📊 Parsed token:`, {
+        leadId,
+        campaignId,
+        timestamp,
+        random,
+      });
+
+      const tokenAge = Date.now() - parseInt(timestamp);
+      const hoursOld = Math.floor(tokenAge / (60 * 60 * 1000));
+
+      console.log(`⏰ Token age: ${hoursOld} hours`);
+
+      // Token expires after 24 hours
+      if (tokenAge > 24 * 60 * 60 * 1000) {
+        console.log(`🕒 Download token expired. Age: ${hoursOld} hours`);
+        return null;
+      }
+
+      console.log(`✅ Token validation successful`);
       return { leadId, campaignId, timestamp: parseInt(timestamp) };
     } catch (error) {
-      console.error("Error validating download token:", error);
+      console.error("❌ Error validating download token:", error);
       return null;
     }
   }

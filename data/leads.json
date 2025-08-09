@@ -7,8 +7,8 @@
     "campaignId": "campaign_1754693083475",
     "consent": true,
     "createdAt": "2025-08-08T22:44:43.486Z",
-    "downloadCount": 0,
-    "lastDownload": null,
+    "downloadCount": 4,
+    "lastDownload": "2025-08-09T01:08:05.492Z",
     "ipAddress": "::1",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
   }
