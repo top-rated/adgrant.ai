@@ -157,6 +157,33 @@
                     <!-- Form Content -->
                     <div class="p-8">
                         <form id="campaignForm" class="space-y-8">
+                            <!-- Customer ID Input -->
+                            <div class="space-y-3">
+                                <label for="customerId" class="flex items-center text-sm font-semibold text-gray-700">
+                                    <span class="material-icons text-base mr-2 text-gray-500">account_circle</span>
+                                    Google Ads Customer ID
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <span class="material-icons text-gray-400 text-20">badge</span>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        id="customerId" 
+                                        name="customerId"
+                                        placeholder="123-456-7890"
+                                        pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
+                                        class="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-google-blue focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 bg-white shadow-sm"
+                                        required
+                                    >
+                                </div>
+                                <div class="flex items-start space-x-2 text-sm text-gray-600">
+                                    <span class="material-icons text-base text-blue-500 mt-0.5">info</span>
+                                    <p>Find this in your Google Ads account (format: XXX-XXX-XXXX)</p>
+                                </div>
+                            </div>
+
                             <!-- Enhanced URL Input -->
                             <div class="space-y-3">
                                 <label for="websiteUrl" class="flex items-center text-sm font-semibold text-gray-700">
@@ -605,7 +632,11 @@
                                     </div>
                                 </div>
                                 
-                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                <div class="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                                    <a href="/templates/google_ads_editor_template.csv" download class="inline-flex items-center space-x-2 text-sm font-medium text-green-600 hover:text-green-700 transition-colors">
+                                        <span class="material-icons text-base">download</span>
+                                        <span>Download Google Ads Editor Template</span>
+                                    </a>
                                     <button class="inline-flex items-center space-x-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
                                         <span class="material-icons text-base">play_circle_outline</span>
                                         <span>Watch Setup Tutorial</span>

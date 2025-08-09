@@ -7,7 +7,8 @@ export const convertToCSV = tool(
     try {
       const {
         campaignData,
-        filename = `google_ads_campaign_${Date.now()}.csv`,
+        customerId,
+        baseFilename = `google_ads_campaign_${Date.now()}`,
         saveToFile = true,
       } = input;
 
@@ -20,183 +21,327 @@ export const convertToCSV = tool(
         throw new Error("Campaign data is required with at least one campaign");
       }
 
-      // Initialize CSV content with Google Ads Editor format (Tab-separated)
-      let csvContent = "Type\tRow count\n";
+      if (!customerId) {
+        throw new Error("Customer ID is required for Google Ads Editor import");
+      }
 
-      // Track component counts
-      let totalCampaigns = 0;
-      let totalAdGroups = 0;
-      let totalKeywords = 0;
-      let totalAds = 0;
-      let totalSitelinks = 0;
-      let totalCallouts = 0;
-      let totalStructuredSnippets = 0;
-      let totalLocations = 0;
+      // Initialize the CSV files data
+      const csvFiles = {};
 
-      // Build the actual CSV data sections
-      let campaignSections = [];
+      // Generate unique IDs for campaigns and ad groups
+      let campaignIdCounter = 100000;
+      let adGroupIdCounter = 200000;
+      let keywordIdCounter = 300000;
+      let adIdCounter = 400000;
 
-      // Add Account Setting (required)
-      campaignSections.push("\n# Account Settings");
-      campaignSections.push("Account setting\t1");
+      // Helper function to escape CSV values
+      const escapeCSV = (value) => {
+        if (!value) return "";
+        const str = String(value);
+        if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
+
+      // CAMPAIGNS CSV
+      let campaignsCSV = [
+        "Row Type,Action,Campaign status,Campaign ID,Campaign,Campaign type,Networks,Budget,Delivery method,Budget type,Bid strategy type,Bid strategy,Campaign start date,Campaign end date,Language,Location,Exclusion,Devices,Label,Target CPA,Target ROAS,Display URL option,Website description,Target Impression Share,Max CPC Bid Limit for Target IS,Location Goal for Target IS,Tracking template,Final URL suffix,Custom parameter,Inventory type,Campaign subtype,Video ad formats",
+      ];
+
+      // AD GROUPS CSV
+      let adGroupsCSV = [
+        "Row Type,Action,Ad group status,Campaign ID,Campaign,Ad group ID,Ad group,Ad group type,Ad rotation,Default max. CPC,CPC%,Max. CPM,Max. CPV,Target CPA,Target CPM,Target CPV,Label,Tracking template,Final URL suffix,Custom parameter,Target ROAS",
+      ];
+
+      // KEYWORDS CSV
+      let keywordsCSV = [
+        "Row Type,Action,Keyword status,Campaign ID,Campaign,Ad group ID,Ad group,Keyword ID,Keyword,Type,Label,Default max. CPC,Max. CPV,Final URL,Mobile final URL,Final URL suffix,Tracking template,Custom parameter",
+      ];
+
+      // RESPONSIVE SEARCH ADS CSV
+      let adsCSV = [
+        "Row Type,Action,Ad status,Campaign ID,Campaign,Ad group ID,Ad group,Ad ID,Ad type,Label,Headline 1,Headline 2,Headline 3,Headline 4,Headline 5,Headline 6,Headline 7,Headline 8,Headline 9,Headline 10,Headline 11,Headline 12,Headline 13,Headline 14,Headline 15,Description 1,Description 2,Description 3,Description 4,Headline 1 position,Headline 2 position,Headline 3 position,Headline 4 position,Headline 5 position,Headline 6 position,Headline 7 position,Headline 8 position,Headline 9 position,Headline 10 position,Headline 11 position,Headline 12 position,Headline 13 position,Headline 14 position,Headline 15 position,Description 1 position,Description 2 position,Description 3 position,Description 4 position,Path 1,Path 2,Final URL,Mobile final URL,Tracking template,Final URL suffix,Custom parameter",
+      ];
 
       // Process each campaign
       campaignData.campaigns.forEach((campaign, campaignIndex) => {
-        totalCampaigns++;
+        const campaignId = campaignIdCounter++;
+        const dailyBudget =
+          campaign.budget || 320 / campaignData.campaigns.length; // Distribute $320 across campaigns
 
-        // Campaign section
-        campaignSections.push(`\n# Campaign: ${campaign.name}`);
-        campaignSections.push(`Campaign\t1`);
+        // Get final URL from campaign or use default
+        const finalUrl =
+          campaign.finalUrl ||
+          campaign.url ||
+          campaignData.websiteUrl ||
+          "https://example.org";
 
-        // Location targeting (if specified)
-        if (campaign.locations && campaign.locations.length > 0) {
-          campaignSections.push(
-            `Location (Targeting)\t${campaign.locations.length}`
-          );
-          totalLocations += campaign.locations.length;
-        } else {
-          // Default to United States targeting for Google Ad Grants
-          campaignSections.push(`Location (Targeting)\t1`);
-          totalLocations += 1;
-        }
-
-        // Budget (as shared budget if specified)
-        if (campaign.budget) {
-          campaignSections.push(`Shared budget\t1`);
-        }
+        // Campaign row
+        const campaignRow = [
+          "Campaign", // Row Type
+          "Add", // Action
+          "Enabled", // Campaign status
+          campaignId, // Campaign ID
+          escapeCSV(campaign.name), // Campaign
+          "Search", // Campaign type
+          "Google search", // Networks
+          dailyBudget.toFixed(2), // Budget
+          "Standard", // Delivery method
+          "Daily", // Budget type
+          "Target CPA", // Bid strategy type
+          "", // Bid strategy (empty for manual)
+          "", // Campaign start date (empty = immediate)
+          "", // Campaign end date (empty = no end)
+          "en", // Language
+          campaign.location || "United States", // Location
+          "", // Exclusion
+          "", // Devices
+          "", // Label
+          "50.00", // Target CPA ($50 for Ad Grants)
+          "", // Target ROAS
+          "", // Display URL option
+          "", // Website description
+          "", // Target Impression Share
+          "", // Max CPC Bid Limit for Target IS
+          "", // Location Goal for Target IS
+          "", // Tracking template
+          "", // Final URL suffix
+          "", // Custom parameter
+          "", // Inventory type
+          "", // Campaign subtype
+          "", // Video ad formats
+        ];
+        campaignsCSV.push(campaignRow.join(","));
 
         // Process ad groups
         if (campaign.adGroups && campaign.adGroups.length > 0) {
           campaign.adGroups.forEach((adGroup, adGroupIndex) => {
-            totalAdGroups++;
+            const adGroupId = adGroupIdCounter++;
 
-            campaignSections.push(`\n# Ad Group: ${adGroup.name}`);
-            campaignSections.push(`Ad group\t1`);
+            // Ad Group row
+            const adGroupRow = [
+              "Ad group", // Row Type
+              "Add", // Action
+              "Enabled", // Ad group status
+              campaignId, // Campaign ID
+              escapeCSV(campaign.name), // Campaign
+              adGroupId, // Ad group ID
+              escapeCSV(adGroup.name), // Ad group
+              "Standard", // Ad group type
+              "Optimize", // Ad rotation
+              "2.00", // Default max. CPC ($2 for Ad Grants)
+              "", // CPC%
+              "", // Max. CPM
+              "", // Max. CPV
+              "", // Target CPA
+              "", // Target CPM
+              "", // Target CPV
+              "", // Label
+              "", // Tracking template
+              "", // Final URL suffix
+              "", // Custom parameter
+              "", // Target ROAS
+            ];
+            adGroupsCSV.push(adGroupRow.join(","));
 
-            // Keywords
+            // Process keywords
             if (adGroup.keywords && adGroup.keywords.length > 0) {
-              campaignSections.push(`Keyword\t${adGroup.keywords.length}`);
-              totalKeywords += adGroup.keywords.length;
+              adGroup.keywords.forEach((keyword, keywordIndex) => {
+                const keywordId = keywordIdCounter++;
+
+                const keywordRow = [
+                  "Keyword", // Row Type
+                  "Add", // Action
+                  "Enabled", // Keyword status
+                  campaignId, // Campaign ID
+                  escapeCSV(campaign.name), // Campaign
+                  adGroupId, // Ad group ID
+                  escapeCSV(adGroup.name), // Ad group
+                  keywordId, // Keyword ID
+                  escapeCSV(keyword), // Keyword
+                  "Broad match", // Type
+                  "", // Label
+                  "2.00", // Default max. CPC
+                  "", // Max. CPV
+                  finalUrl, // Final URL
+                  "", // Mobile final URL
+                  "", // Final URL suffix
+                  "", // Tracking template
+                  "", // Custom parameter
+                ];
+                keywordsCSV.push(keywordRow.join(","));
+              });
             }
 
-            // Responsive Search Ads
+            // Process responsive search ads
             if (adGroup.ads && adGroup.ads.length > 0) {
-              const rsaAds = adGroup.ads.filter(
-                (ad) => ad.type === "responsive_search_ad"
-              );
-              if (rsaAds.length > 0) {
-                campaignSections.push(`Responsive search ad\t${rsaAds.length}`);
-                totalAds += rsaAds.length;
-              }
+              adGroup.ads.forEach((ad, adIndex) => {
+                if (ad.type === "responsive_search_ad") {
+                  const adId = adIdCounter++;
+
+                  // Ensure we have at least 3 headlines and 2 descriptions
+                  const headlines = ad.headlines || [];
+                  const descriptions = ad.descriptions || [];
+
+                  // Pad with empty values up to 15 headlines
+                  while (headlines.length < 15) headlines.push("");
+                  // Pad with empty values up to 4 descriptions
+                  while (descriptions.length < 4) descriptions.push("");
+
+                  const adRow = [
+                    "Ad", // Row Type
+                    "Add", // Action
+                    "Enabled", // Ad status
+                    campaignId, // Campaign ID
+                    escapeCSV(campaign.name), // Campaign
+                    adGroupId, // Ad group ID
+                    escapeCSV(adGroup.name), // Ad group
+                    adId, // Ad ID
+                    "Responsive search ad", // Ad type
+                    "", // Label
+                    // Headlines 1-15
+                    ...headlines.slice(0, 15).map((h) => escapeCSV(h)),
+                    // Descriptions 1-4
+                    ...descriptions.slice(0, 4).map((d) => escapeCSV(d)),
+                    // Headline positions (empty for auto-optimization)
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    // Description positions (empty for auto-optimization)
+                    "",
+                    "",
+                    "",
+                    "",
+                    "", // Path 1
+                    "", // Path 2
+                    finalUrl, // Final URL
+                    "", // Mobile final URL
+                    "", // Tracking template
+                    "", // Final URL suffix
+                    "", // Custom parameter
+                  ];
+                  adsCSV.push(adRow.join(","));
+                }
+              });
             }
           });
         }
-
-        // Campaign-level ad assets
-        if (campaign.sitelinks && campaign.sitelinks.length > 0) {
-          campaignSections.push(
-            `Sitelink (Ad assets)\t${campaign.sitelinks.length}`
-          );
-          totalSitelinks += campaign.sitelinks.length;
-        }
-
-        if (campaign.callouts && campaign.callouts.length > 0) {
-          campaignSections.push(
-            `Callout (Ad assets)\t${campaign.callouts.length}`
-          );
-          totalCallouts += campaign.callouts.length;
-        }
-
-        if (
-          campaign.structuredSnippets &&
-          campaign.structuredSnippets.length > 0
-        ) {
-          campaignSections.push(
-            `Structured snippet (Ad assets)\t${campaign.structuredSnippets.length}`
-          );
-          totalStructuredSnippets += campaign.structuredSnippets.length;
-        }
       });
 
-      // Build final CSV with summary counts at top
-      let finalCSV = "Type\tRow count\n";
-      finalCSV += `Account setting\t1\n`;
-      finalCSV += `Campaign\t${totalCampaigns}\n`;
-      finalCSV += `Ad group\t${totalAdGroups}\n`;
-      if (totalKeywords > 0) finalCSV += `Keyword\t${totalKeywords}\n`;
-      if (totalAds > 0) finalCSV += `Responsive search ad\t${totalAds}\n`;
-      if (totalLocations > 0)
-        finalCSV += `Location (Targeting)\t${totalLocations}\n`;
-      if (totalSitelinks > 0)
-        finalCSV += `Sitelink (Ad assets)\t${totalSitelinks}\n`;
-      if (totalCallouts > 0)
-        finalCSV += `Callout (Ad assets)\t${totalCallouts}\n`;
-      if (totalStructuredSnippets > 0)
-        finalCSV += `Structured snippet (Ad assets)\t${totalStructuredSnippets}\n`;
+      // Create the CSV files object
+      csvFiles.campaigns = campaignsCSV.join("\n");
+      csvFiles.adGroups = adGroupsCSV.join("\n");
+      csvFiles.keywords = keywordsCSV.join("\n");
+      csvFiles.ads = adsCSV.join("\n");
 
-      // Add detailed campaign data
-      finalCSV += campaignSections.join("\n");
-
-      // Save to file if requested
+      // Save to files if requested
+      const filePaths = {};
       if (saveToFile) {
-        const filePath = path.join(process.cwd(), "exports", filename);
-
-        // Ensure exports directory exists
-        const exportsDir = path.dirname(filePath);
+        const exportsDir = path.join(process.cwd(), "exports");
         if (!fs.existsSync(exportsDir)) {
           fs.mkdirSync(exportsDir, { recursive: true });
         }
 
-        // Write CSV file
-        fs.writeFileSync(filePath, finalCSV, "utf8");
-
-        return {
-          success: true,
-          message: `Google Ads CSV file created successfully`,
-          filename: filename,
-          filePath: filePath,
-          summary: {
-            totalCampaigns,
-            totalAdGroups,
-            totalKeywords,
-            totalAds,
-            totalSitelinks,
-            totalCallouts,
-            totalStructuredSnippets,
-            totalLocations,
-          },
-          csvPreview: finalCSV.substring(0, 500) + "...",
+        // Save each CSV file
+        const fileNames = {
+          campaigns: `${baseFilename}_campaigns.csv`,
+          adGroups: `${baseFilename}_ad_groups.csv`,
+          keywords: `${baseFilename}_keywords.csv`,
+          ads: `${baseFilename}_responsive_search_ads.csv`,
         };
+
+        Object.keys(csvFiles).forEach((type) => {
+          const filePath = path.join(exportsDir, fileNames[type]);
+          fs.writeFileSync(filePath, csvFiles[type], "utf8");
+          filePaths[type] = {
+            filename: fileNames[type],
+            path: filePath,
+          };
+        });
       }
 
-      // Return CSV content without saving
+      // Calculate summary statistics
+      const summary = {
+        totalCampaigns: campaignData.campaigns.length,
+        totalAdGroups: campaignData.campaigns.reduce(
+          (sum, c) => sum + (c.adGroups ? c.adGroups.length : 0),
+          0
+        ),
+        totalKeywords: campaignData.campaigns.reduce(
+          (sum, c) =>
+            sum +
+            (c.adGroups
+              ? c.adGroups.reduce(
+                  (agSum, ag) => agSum + (ag.keywords ? ag.keywords.length : 0),
+                  0
+                )
+              : 0),
+          0
+        ),
+        totalAds: campaignData.campaigns.reduce(
+          (sum, c) =>
+            sum +
+            (c.adGroups
+              ? c.adGroups.reduce(
+                  (agSum, ag) => agSum + (ag.ads ? ag.ads.length : 0),
+                  0
+                )
+              : 0),
+          0
+        ),
+        customerId: customerId,
+        budgetDistribution: `$${(320 / campaignData.campaigns.length).toFixed(
+          2
+        )} per campaign`,
+      };
+
       return {
         success: true,
-        message: `Google Ads CSV content generated`,
-        csvContent: finalCSV,
-        summary: {
-          totalCampaigns,
-          totalAdGroups,
-          totalKeywords,
-          totalAds,
-          totalSitelinks,
-          totalCallouts,
-          totalStructuredSnippets,
-          totalLocations,
+        message: `Google Ads Editor CSV files created successfully`,
+        files: filePaths,
+        csvData: saveToFile ? null : csvFiles,
+        summary: summary,
+        instructions: {
+          uploadOrder: [
+            "1. Import campaigns CSV first",
+            "2. Import ad groups CSV second",
+            "3. Import keywords CSV third",
+            "4. Import responsive search ads CSV last",
+          ],
+          notes: [
+            "All files are formatted for Google Ads Editor",
+            "CPA bidding strategy set to $50 (Ad Grant compliant)",
+            "Default max CPC set to $2.00 (Ad Grant compliant)",
+            "Broad match keywords for maximum reach",
+            "Campaign budgets distributed evenly across campaigns",
+          ],
         },
       };
     } catch (error) {
       return {
         success: false,
         error: error.message,
-        message: "Failed to generate Google Ads CSV file",
+        message: "Failed to generate Google Ads Editor CSV files",
       };
     }
   },
   {
     name: "convert_to_csv",
     description:
-      "Convert campaign data to Google Ads Editor compatible CSV format. Creates properly formatted TSV file with all required components for Google Ad Grant campaigns.",
+      "Convert campaign data to Google Ads Editor compatible CSV files. Creates separate properly formatted CSV files for campaigns, ad groups, keywords, and responsive search ads that can be imported directly into Google Ads Editor.",
     parameters: {
       type: "object",
       properties: {
@@ -213,12 +358,17 @@ export const convertToCSV = tool(
                   name: { type: "string", description: "Campaign name" },
                   budget: {
                     type: "number",
-                    description: "Daily budget amount",
+                    description:
+                      "Daily budget amount (will be distributed from $320 total if not specified)",
                   },
-                  locations: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "Geographic targeting locations",
+                  location: {
+                    type: "string",
+                    description:
+                      "Geographic targeting location (defaults to 'United States')",
+                  },
+                  finalUrl: {
+                    type: "string",
+                    description: "Landing page URL for the campaign",
                   },
                   adGroups: {
                     type: "array",
@@ -229,7 +379,8 @@ export const convertToCSV = tool(
                         keywords: {
                           type: "array",
                           items: { type: "string" },
-                          description: "List of keywords (broad match)",
+                          description:
+                            "List of keywords (will be set as broad match)",
                         },
                         ads: {
                           type: "array",
@@ -238,17 +389,20 @@ export const convertToCSV = tool(
                             properties: {
                               type: {
                                 type: "string",
-                                description: "Ad type (responsive_search_ad)",
+                                description:
+                                  "Ad type (should be 'responsive_search_ad')",
                               },
                               headlines: {
                                 type: "array",
                                 items: { type: "string" },
-                                description: "RSA headlines (15 recommended)",
+                                description:
+                                  "RSA headlines (minimum 3, up to 15 recommended)",
                               },
                               descriptions: {
                                 type: "array",
                                 items: { type: "string" },
-                                description: "RSA descriptions (4 minimum)",
+                                description:
+                                  "RSA descriptions (minimum 2, up to 4 recommended)",
                               },
                             },
                           },
@@ -256,41 +410,37 @@ export const convertToCSV = tool(
                       },
                     },
                   },
-                  sitelinks: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "Sitelink extensions",
-                  },
-                  callouts: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "Callout extensions",
-                  },
-                  structuredSnippets: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "Structured snippet extensions",
-                  },
                 },
               },
+            },
+            websiteUrl: {
+              type: "string",
+              description:
+                "Default website URL to use for final URLs if not specified per campaign",
             },
           },
           required: ["campaigns"],
         },
-        filename: {
+        customerId: {
           type: "string",
           description:
-            "Optional filename for the CSV file (default: auto-generated timestamp)",
+            "Google Ads Customer ID (format: XXX-XXX-XXXX) - required for Google Ads Editor import",
+          required: true,
+        },
+        baseFilename: {
+          type: "string",
+          description:
+            "Base filename for the CSV files (default: auto-generated timestamp). Will create separate files with suffixes.",
           default: null,
         },
         saveToFile: {
           type: "boolean",
           description:
-            "Whether to save CSV to file or just return content (default: true)",
+            "Whether to save CSV files or just return content (default: true)",
           default: true,
         },
       },
-      required: ["campaignData"],
+      required: ["campaignData", "customerId"],
     },
   }
 );

@@ -25,6 +25,7 @@ class CampaignGenerator {
   setupInputValidation() {
     const urlInput = document.getElementById("websiteUrl");
     const urlValidationIcon = document.getElementById("urlValidationIcon");
+    const customerIdInput = document.getElementById("customerId");
 
     urlInput.addEventListener("input", (e) => {
       this.validateUrl(e.target, urlValidationIcon);
@@ -32,6 +33,14 @@ class CampaignGenerator {
 
     urlInput.addEventListener("blur", (e) => {
       this.validateUrl(e.target, urlValidationIcon);
+    });
+
+    customerIdInput.addEventListener("input", (e) => {
+      this.validateCustomerId(e.target);
+    });
+
+    customerIdInput.addEventListener("blur", (e) => {
+      this.validateCustomerId(e.target);
     });
   }
 
@@ -53,21 +62,47 @@ class CampaignGenerator {
     }
   }
 
+  validateCustomerId(input) {
+    const customerId = input.value.trim();
+
+    if (!customerId) {
+      this.resetInputState(input, null);
+      return false;
+    }
+
+    // Google Ads Customer ID format: XXX-XXX-XXXX (10 digits with hyphens)
+    const customerIdPattern = /^\d{3}-\d{3}-\d{4}$/;
+
+    if (customerIdPattern.test(customerId)) {
+      this.setInputState(input, null, "success");
+      return true;
+    } else {
+      this.setInputState(input, null, "error");
+      return false;
+    }
+  }
+
   setInputState(input, iconElement, state) {
     input.classList.remove("input-error", "input-success");
-    iconElement.classList.add("hidden");
+    if (iconElement) {
+      iconElement.classList.add("hidden");
+    }
 
     if (state === "error") {
       input.classList.add("input-error");
     } else if (state === "success") {
       input.classList.add("input-success");
-      iconElement.classList.remove("hidden");
+      if (iconElement) {
+        iconElement.classList.remove("hidden");
+      }
     }
   }
 
   resetInputState(input, iconElement) {
     input.classList.remove("input-error", "input-success");
-    iconElement.classList.add("hidden");
+    if (iconElement) {
+      iconElement.classList.add("hidden");
+    }
   }
 
   setupMicroInteractions() {
@@ -415,25 +450,45 @@ class CampaignGenerator {
     e.preventDefault();
 
     const formData = new FormData(this.form);
+    const customerId = formData.get("customerId");
     const websiteUrl = formData.get("websiteUrl");
     const instructions = formData.get("instructions");
 
-    if (!this.validateForm(websiteUrl)) {
+    if (!this.validateForm(customerId, websiteUrl)) {
       return;
     }
 
     this.startGeneration();
 
     try {
-      await this.generateCampaigns(websiteUrl, instructions);
+      await this.generateCampaigns(customerId, websiteUrl, instructions);
     } catch (error) {
       this.handleError(error);
     }
   }
 
-  validateForm(url) {
+  validateForm(customerId, url) {
+    const customerIdInput = document.getElementById("customerId");
     const urlInput = document.getElementById("websiteUrl");
     const urlValidationIcon = document.getElementById("urlValidationIcon");
+
+    if (!customerId) {
+      this.showNotification(
+        "Please enter your Google Ads Customer ID",
+        "error"
+      );
+      customerIdInput.focus();
+      return false;
+    }
+
+    if (!this.validateCustomerId(customerIdInput)) {
+      this.showNotification(
+        "Please enter a valid Customer ID (format: XXX-XXX-XXXX)",
+        "error"
+      );
+      customerIdInput.focus();
+      return false;
+    }
 
     if (!url) {
       this.showNotification("Please enter a website URL", "error");
@@ -558,7 +613,7 @@ class CampaignGenerator {
     }
   }
 
-  async generateCampaigns(url, instructions) {
+  async generateCampaigns(customerId, url, instructions) {
     const startTime = Date.now();
 
     try {
@@ -567,7 +622,9 @@ class CampaignGenerator {
         .toString(36)
         .substring(7)}`;
 
-      console.log(`Starting real campaign generation for: ${url}`);
+      console.log(
+        `Starting real campaign generation for: ${url} with Customer ID: ${customerId}`
+      );
 
       // Make API call to backend
       const response = await fetch("/api/v1/generate-campaigns", {
@@ -577,6 +634,7 @@ class CampaignGenerator {
         },
         body: JSON.stringify({
           threadId: threadId,
+          customerId: customerId,
           websiteUrl: url,
           instructions: instructions || "",
         }),
